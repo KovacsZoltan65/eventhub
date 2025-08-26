@@ -12,6 +12,33 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        $credentials = $request->only('email', 'password');
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Hibás adatok'], 401);
+        }
+        $user = $request->user();
+        $token = $user->createToken('api-token')->plainTextToken;
+        
+        $user->load('roles:id,name','permissions:id,name'); // direkt perm-ek
+        $allPerms = $user->getAllPermissions()->pluck('name'); // szerepkörből öröklöttekkel együtt
+        
+        //return response()->json(['token' => $token]);
+        $result = [
+            'id'          => $user->id,
+            'name'        => $user->name,
+            'email'       => $user->email,
+            'roles'       => $user->roles->pluck('name'),
+            'permissions' => $allPerms,
+            'is_blocked'  => (bool) (auth()->user()->is_blocked ?? false),
+            'token'       => $token,
+        ];
+\Log::info('$result: ' . print_r($result, true));
+        return response()->json($result);
+        
+    }
+    /*
+    public function login(Request $request)
+    {
         // CSRF cookie-t a frontend kéri a /sanctum/csrf-cookie-ról
         $credentials = $request->validate([
             'email'    => ['required', 'email'],
@@ -50,17 +77,18 @@ class AuthController extends Controller
             'roles'       => $user->roles->pluck('name'),
             'permissions' => $allPerms,
             'is_blocked'  => (bool) (auth()->user()->is_blocked ?? false),
-            /*
-            'user' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'roles' => $user->roles->pluck('name'),
-                'permissions' => $allPerms,
-            ],
-            */
+            
+//            'user' => [
+//                'id'    => $user->id,
+//                'name'  => $user->name,
+//                'email' => $user->email,
+//                'roles' => $user->roles->pluck('name'),
+//                'permissions' => $allPerms,
+//            ],
+            
         ]);
     }
+    */
     
     public function me(Request $request)
     {

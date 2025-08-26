@@ -15,6 +15,9 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+//Route::post('/login', [AuthController::class, 'login']);
+//Route::post('/logout', [AuthController::class,'logout'])->middleware('auth');
+
 // --- Auth ---
 // Login/Logout: legyen 'web' middleware, hogy legyen session
 //Route::post('/auth/login', [AuthController::class,'login'])->middleware('web');  // <<< FONTOS
@@ -88,11 +91,12 @@ Route::middleware(['auth:sanctum','role:admin'])
 Route::middleware(['auth:sanctum','role:admin'])
     ->controller(AdminEventController::class)->prefix('admin')->name('admin.')
     ->group(function () {
+        //
         Route::get('/events', 'index')->name('events.index')->middleware('permission:event.view.any');
+        //
         Route::get('/events/{event}', 'show')->name('events.show')->middleware('permission:event.view.any');
-        Route::patch('/events/{event}/cancel', 'cancel')
-            ->name('events.cancel')
-            ->middleware('permission:event.cancel.any');
+        // 
+        Route::patch('/events/{event}/cancel', 'cancel')->name('events.cancel')->middleware('permission:event.cancel.any');
     });
     
 // --- Admin ---

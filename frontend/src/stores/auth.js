@@ -1,34 +1,32 @@
 import { defineStore } from 'pinia';
-import AuthService from '../services/AuthService';
+import AuthService from '@/services/AuthService.js';
 
 export const useAuthStore = defineStore('auth', {
-    state: () => ({
-        user: null,
-        loading: false,
-        error: null,
-    }),
-    getters: {
-        isAuthenticated: (s) => !!s.user,
-        role: (s) => s.user?.role ?? 'guest',
-    },
-    actions: {
-        async fetchMe() {
-        this.loading = true; this.error = null;
-        try {
-            const user = await AuthService.me();
-            this.user = user;
-        } catch (e) {
-            this.user = null;
-        } finally {
-            this.loading = false;
-        }
+  state: () => ({
+    user: null,
+    loading: false,
+    error: null,
+  }),
+  getters: {
+    isAuthenticated: (s) => !!s.user,
+    role: (s) => s.user?.role ?? 'guest',
+  },
+  actions: {
+    async fetchMe() {
+      this.loading = true; this.error = null;
+      try {
+        this.user = await AuthService.me();
+      } catch {
+        this.user = null;
+      } finally {
+        this.loading = false;
+      }
     },
     async login(email, password) {
       this.loading = true; this.error = null;
       try {
         await AuthService.login({ email, password });
-        const user = await AuthService.me();
-        this.user = user;
+        this.user = await AuthService.me();
         return true;
       } catch (e) {
         this.error = e?.response?.data?.message || 'Sikertelen bejelentkezés.';
