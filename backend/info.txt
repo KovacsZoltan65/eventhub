@@ -1,0 +1,64 @@
+cd apps/backend
+composer create-project laravel/laravel .
+composer require laravel/sanctum spatie/laravel-permission spatie/laravel-activitylog prettus/l5-repository
+composer require --dev larastan/larastan laradumps/laradumps
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"
+
+php artisan install:api
+
+route:
+php artisan route:list | findstr companies
+php artisan route:list | findstr settings
+php artisan route:list | findstr timezone
+
+php artisan optimize:clear
+
+php artisan optimize:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan event:clear
+php artisan cache:clear
+
+A Spatie cache-el, így a getAllPermissions() gyors, a permission:cache-reset parancsot használd seed/változás után.
+
+// ========================================
+// laradump
+// ========================================
+composer require laradumps/laradumps --dev -W
+
+// ========================================
+// PHP STAN
+// ========================================
+https://phpstan.org/
+1. Telepítés
+    composer require --dev larastan/larastan --with-all-dependencies
+    vagy
+    composer require --dev larastan/larastan -W
+2. Konfiguráció
+    Hozz létre egy phpstan.neon nevű konfigurációs fájlt a projekted gyökerében az alábbi példával indulva:
+        includes:
+        - ./vendor/nunomaduro/larastan/extension.neon
+
+        parameters:
+            level: 5  # Szabály szintje: 0 (leglazább) - 9 (legszaigorúbb)
+            paths:
+                - app
+                - routes
+                - database
+            ignoreErrors:
+                - '#PHPDoc tag @var#'
+3. Futtatás
+    ./vendor/bin/phpstan analyse --memory-limit-1G
+    vagy
+    ./vendor/bin/phpstan analyse app
+    Ez végigvizsgálja az app mappát és visszajelzést ad a kódminőségről, hibákról
+
+
+Bejelentkezés:
+POST /api/auth/login
+Content-Type: application/json
+
+{ "email": "admin@eventhub.local", "password": "Admin123!" }

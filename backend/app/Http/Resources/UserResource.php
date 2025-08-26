@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray($request = null): array
+    {
+        return [
+            'id'          => $this->id,
+            'name'        => $this->name,
+            'email'       => $this->email,
+            'is_blocked'  => (bool) $this->is_blocked,
+            'roles'       => $this->whenLoaded('roles', fn() => $this->roles->pluck('name')),
+            'created_at'  => optional($this->created_at)->toISOString(),
+            'updated_at'  => optional($this->updated_at)->toISOString(),
+        ];
+    }
+}

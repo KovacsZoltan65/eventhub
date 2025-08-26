@@ -1,0 +1,11 @@
+includes:
+        - ./vendor/nunomaduro/larastan/extension.neon
+
+        parameters:
+            level: 5  # Szabály szintje: 0 (leglazább) - 9 (legszaigorúbb)
+            paths:
+                - app
+                - routes
+                - database
+            ignoreErrors:
+                - '#PHPDoc tag @var#'
