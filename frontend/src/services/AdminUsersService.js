@@ -13,7 +13,6 @@ class AdminUsersService extends BaseService
 
     async list(params = {})
     {
-        console.log(params);
         const query = {
             search: params.search ?? '',
             page: params.page ?? 1,

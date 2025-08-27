@@ -78,6 +78,7 @@ function fmt(dt) { return dt ? new Date(dt).toLocaleString() : '—' }
                     <th class="text-right p-2 border-b">Kapacitás</th>
                     <th class="text-right p-2 border-b">Szabad</th>
                     <th class="text-left p-2 border-b">Státusz</th>
+                    <th class="text-left p-2 border-b">Művelet</th>
                 </tr>
             </thead>
             <tbody>
@@ -94,6 +95,9 @@ function fmt(dt) { return dt ? new Date(dt).toLocaleString() : '—' }
                     <td class="p-2 border-b text-right">{{ ev.remaining_seats ?? '—' }}</td>
                     <td class="p-2 border-b">
                         <span class="px-2 py-0.5 border rounded text-xs uppercase">{{ ev.status }}</span>
+                    </td>
+                    <td class="p-2 border-b">
+                        <button @click.prevent="router.push(`/events/${ev.id}`)">részletek</button>
                     </td>
                 </tr>
             </tbody>
