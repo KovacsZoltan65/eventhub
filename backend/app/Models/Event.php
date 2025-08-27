@@ -26,6 +26,9 @@ class Event extends Model
         'created_at' => 'immutable_datetime',
         'updated_at' => 'immutable_datetime',
     ];
+    
+    // Ha szeretnéd, hogy minden JSON-ban benne legyen:
+    protected $appends = ['remaining_seats'];
 
     /*
      * ==============================================================
@@ -79,6 +82,13 @@ class Event extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+    
+    public function scopeWithRemainingSeats($q)
+    {
+        return $q->withSum(['bookings as confirmed_qty' => function ($qq) {
+            $qq->where('status', 'confirmed');
+        }], 'quantity');
     }
 
     public function getRemainingSeatsAttribute(): int

@@ -48,23 +48,10 @@ async function book()
     loading.value = true;
     error.value = null;
     success.value = null;
-    /*
-    try {
-        const res = await BookingsService.create({ event_id: eventId, quantity: qty.value });
-        console.log('Show res',res);
-        const bookingId = res.bookingId ?? res.id ?? res.booking?.id;
-        const q = res.quantity ?? res.booking?.quantity;
-        success.value = `Foglalás OK (#${bookingId}, db: ${q})`;
-    } catch (e) {
-        error.value = e?.response?.data?.message || 'Foglalás sikertelen.';
-    } finally {
-        loading.value = false;
-    }
-    */
     
     try {
         const res = await BookingsService.create({ event_id: eventId, quantity: qty.value });
-        console.log('Show.vue res', res);
+        
         success.value = `Foglalás OK (#${res.bookingId}, db: ${res.quantity})`;
     } catch (e) {
         error.value = e?.response?.data?.message || 'Foglalás sikertelen.';

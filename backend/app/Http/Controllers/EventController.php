@@ -12,7 +12,8 @@ class EventController extends Controller
     public function index(Request $rq)
     {
         $q = \App\Models\Event::query()
-            ->where('status', 'published');
+            ->where('status', 'published')
+            ->withRemainingSeats();
 
         if ($s = trim($rq->get('search', ''))) {
             $q->where(function($qq) use ($s) {
@@ -35,9 +36,8 @@ class EventController extends Controller
         $perPage = (int)($rq->get('perPage', 12));
         $perPage = max(5, min($perPage, 50));
 
-        return response()->json(
-            $q->paginate($perPage)->appends($rq->query())
-        );
+        //return response()->json($q->paginate($perPage)->appends($rq->query()));
+        return response()->json($q->paginate($perPage));
     }
     
     /**

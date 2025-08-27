@@ -126,7 +126,13 @@ class BookingController extends Controller
                 'bookingId'  => $booking->id,
                 'quantity'   => (int) $booking->quantity,
                 'totalPrice' => (int) $booking->quantity * (int) $booking->unit_price,
-                'timestamp'  => now()->toISOString(),
+                
+                'timestamp' => $booking->created_at,
+                /*
+                'timestamp' => $booking->created_at instanceof \DateTimeInterface
+                                ? $booking->created_at->format(\DateTimeInterface::ATOM) // ISO-8601
+                                : now()->toAtomString(),
+                */
                 'event'      => [
                     'id'        => $booking->event->id,
                     'title'     => $booking->event->title,
@@ -134,8 +140,6 @@ class BookingController extends Controller
                     'location'  => $booking->event->location,
                 ],
             ];
-            
-            \Log::info(print_r($result, true));
             
             return response()->json($result, Response::HTTP_CREATED);
         });
