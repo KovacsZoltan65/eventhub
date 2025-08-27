@@ -67,8 +67,8 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotBlocked::class])
         // Saját foglalások
         Route::get('/my/bookings', 'indexMine')->name('bookings.mine')
             ->middleware('permission:booking.view.mine');
-        //
-        Route::patch('/my/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('my.bookings.cancel')
+        // Foglalás lemondása
+        Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('my.bookings.cancel')
             ->middleware('permission:booking.cancel.mine');
     }
 );

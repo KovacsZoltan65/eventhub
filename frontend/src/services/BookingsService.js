@@ -52,6 +52,15 @@ class BookingsService
         return data; // { data: [...], links: {...}, meta: {...} }
     }
 
+    async cancel(id) {
+        if (!getCookie('XSRF-TOKEN')) {
+            await originClient.get('/sanctum/csrf-cookie');
+        }
+        const { data } = await originClient.patch(`/api${this.url}/${id}/cancel`);
+
+        return data; // BookingResource alakú objektum
+    }
+
 }
 
 export default new BookingsService();

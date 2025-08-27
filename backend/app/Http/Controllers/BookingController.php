@@ -6,10 +6,15 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Validation\Rule;
+use function activity;
+use function auth;
+use function config;
+use function response;
+use function Symfony\Component\Clock\now;
 
 class BookingController extends Controller
 {
@@ -52,6 +57,7 @@ class BookingController extends Controller
         );
     }
     
+    // Foglalás rögzítése
     public function store(StoreBookingRequest $request)
     {
         $userId = auth()->id();
@@ -137,34 +143,44 @@ class BookingController extends Controller
         return $result;
     }
     
+    // Foglalás lemondása
     public function cancel(Request $r, Booking $booking)
     {
-        // Tulajdonjog ellenőrzése
-        if ((int)$booking->user_id !== (int)$r->user()->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        $user = $r->user();
+        
+        // Csak a saját foglalását mondhatja le
+        if ($booking->user_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden.'], Http::HTTP_FORBIDDEN);
         }
         
+        // Betöltjük az eseményt a további ellenőrzésekhez és válaszhoz
+        $booking->load(['event:id,title,starts_at,location']);
+        
+        // Már törölt?
         if ($booking->status === 'cancelled') {
-            return response()->json(['message' => 'Booking already cancelled'], 409);
+            return response()->json(['message' => 'Booking already cancelled.'], Http::HTTP_UNPROCESSABLE_ENTITY);
         }
         
-        // Opcionális: esemény már elkezdődött?
-        $booking->load('event:id,starts_at,title,location');
-        if ($booking->event && $booking->event->starts_at && now()->greaterThanOrEqualTo($booking->event->starts_at)) {
-            return response()->json(['message' => 'Event already started'], 422);
+        // Csak jövőbeli eseményt lehessen lemondani
+        $startsAt = $booking->event?->starts_at instanceof \Illuminate\Support\Carbon
+            ? $booking->event->starts_at
+            : Carbon::parse($booking->event?->starts_at);
+        
+        if ($startsAt && $startsAt->isPast()) {
+            return response()->json(['message' => 'Event is in the past; cannot cancel.'], Http::HTTP_UNPROCESSABLE_ENTITY);
         }
         
-        DB::transaction(function () use ($r, $booking) {
-            $booking->update(['status' => 'cancelled']);
-
-            activity()
-                ->causedBy($r->user())
-                ->performedOn($booking)
-                ->withProperties(['event_id' => $booking->event_id, 'quantity' => $booking->quantity])
-                ->event('booking.cancel')
-                ->log('Booking cancelled');
-        });
+        // Állapot frissítése
+        $booking->update(['status' => 'cancelled']);
         
-        return new BookingResource($booking->refresh()->load('event:id,title,starts_at,location'));
+        activity()
+            ->causedBy($user)
+            ->performedOn($booking)
+            ->withProperties(['event_id' => $booking->event_id, 'prev_status' => 'confirmed'])
+            ->event('booking.cancel')
+            ->log('Booking cancelled');
+        
+        // Friss objektum vissza (event mezőkkel)
+        return response()->json((new BookingResource($booking))->resolve(), Response::HTTP_OK);
     }
 }
