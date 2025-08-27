@@ -1,41 +1,50 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth.js';
+// src/router/index.js
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
 
 const routes = [
   { path: '/', redirect: '/events' },
-  { path: '/login',      component: () => import('@/pages/auth/Login.vue') },
-  { path: '/events',     component: () => import('@/pages/events/Index.vue') },
-  { path: '/events/:id', component: () => import('@/pages/events/Show.vue') },
+  { path: '/login', component: () => import('@/pages/auth/Login.vue') },
 
-  // védett útvonalak
-  { path: '/admin',     component: () => import('@/pages/admin/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
-  { path: '/organizer', component: () => import('@/pages/organizer/Index.vue'), meta: { requiresAuth: true, roles: ['admin','organizer'] } },
-  // Foglalások
-  { path: '/bookings',  component: () => import('@/pages/bookings/Index.vue'), meta: { requiresAuth: true }, name: 'bookings.mine', },
+  // Public
+  { path: '/events', name: 'events.index', component: () => import('@/pages/events/Index.vue'), meta: { requiresAuth: false } },
+  { path: '/events/:id', name: 'events.show', component: () => import('@/pages/events/Show.vue'), meta: { requiresAuth: false } },
 
-];
+  // Admin
+  { path: '/admin', name: 'admin.index', component: () => import('@/pages/admin/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
+  { path: '/admin/users', name: 'admin.users', component: () => import('@/pages/admin/users/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
+
+  // Organizer
+  { path: '/organizer', name: 'organizer.index', component: () => import('@/pages/organizer/Index.vue'), meta: { requiresAuth: true, roles: ['admin','organizer'] } },
+  { path: '/organizer/events', name: 'organizer.events', component: () => import('@/pages/organizer/events/Index.vue'), meta: { requiresAuth: true, roles: ['admin','organizer'] } },
+
+  // Saját foglalások
+  { path: '/bookings', name: 'bookings.mine', component: () => import('@/pages/bookings/Index.vue'), meta: { requiresAuth: true } },
+]
 
 export const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // Session visszaállítás első betöltéskor – csendes (nem dob hibát)
+  // Csendes session visszaállítás első betöltéskor
   if (!auth.user && to.path !== '/login') {
-    await auth.fetchMe()
+    try { await auth.fetchMe() } catch (_) {}
   }
 
-  // Csak a requiresAuth route-okra dobjunk loginra
+  // 1) Auth guard
   if (to.meta?.requiresAuth && !auth.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 
-  // Role check, ha van roles meta
-  if (to.meta?.roles?.length && auth.isAuthenticated && !to.meta.roles.includes(auth.role)) {
-    return { path: '/' }
+  // 2) Role guard (TÖMBÖK összevetése!)
+  if (to.meta?.roles?.length && auth.isAuthenticated) {
+    const userRoles = auth.user?.roles || []
+    const ok = to.meta.roles.some(r => userRoles.includes(r))
+    if (!ok) return { path: '/' } // vagy egy 403-as oldal
   }
 
   return true

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
 const auth = useAuthStore()
+const hasRole = (r) => auth.user?.roles?.includes(r)
 
 const isAuth = computed(() => auth.isAuthenticated)
 const displayName = computed(() => isAuth.value ? (auth.user?.name ?? 'Ismeretlen') : 'Guard')
@@ -21,38 +22,33 @@ async function doLogout() {
             <RouterLink to="/events" class="font-semibold">EventHub</RouterLink>
 
             <nav class="flex items-center gap-4 text-sm">
-                <RouterLink 
-                    to="/events" 
-                    class="hover:underline"
-                >
-                    Események
-                </RouterLink>
 
-                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">
-                    Foglalásaim
-                </RouterLink>
+                <!-- ESEMÉNYEK -->
+                <RouterLink to="/events" class="hover:underline">Események | </RouterLink>
 
+                <!-- FELHASZNÁLÓK (role: admin) -->
+                <RouterLink v-if="hasRole('admin')" to="/admin/users">Admin / Felhasználók | </RouterLink>
+
+                <!-- FOGLALÁSAIM -->
+                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim | </RouterLink>
+
+                <span class="ml-auto">
+                    <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
+                    <button v-else @click="auth.logout()">Logout</button>
+                </span>
             </nav>
 
-            <div class="ms-auto flex items-center gap-3 text-sm">
+            <!--<div class="ms-auto flex items-center gap-3 text-sm">
                 <span>Felhasználó: <strong>{{ displayName }}</strong></span>
 
-                <RouterLink
-                    v-if="!isAuth"
-                    to="/login"
-                    class="px-3 py-1 border rounded hover:bg-gray-50"
-                >
+                <RouterLink v-if="!isAuth" to="/login" class="px-3 py-1 border rounded hover:bg-gray-50" >
                     Login
                 </RouterLink>
 
-                <button
-                    v-else
-                    class="px-3 py-1 border rounded hover:bg-gray-50"
-                    @click="doLogout"
-                >
+                <button v-else class="px-3 py-1 border rounded hover:bg-gray-50" @click="doLogout" >
                     Logout
                 </button>
-            </div>
+            </div>-->
     </div>
   </header>
 </template>

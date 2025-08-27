@@ -9,58 +9,35 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EventController extends Controller
 {
-    /**
-     * Publikus eseménylista (csak published).
-     * Szűrés: search (title/description), location (like), category (eq)
-     * Rendezés: field (starts_at|title|location), order (asc|desc) – default: starts_at asc
-     * Pagináció: per_page (1..100), page
-     */
-    public function events(Request $request)
+    public function index(Request $rq)
     {
-        $validated = $request->validate([
-            'search'   => 'sometimes|nullable|string|max:255',
-            'location' => 'sometimes|nullable|string|max:255',
-            'category' => 'sometimes|nullable|string|max:100',
-            'field'    => 'sometimes|in:starts_at,title,location',
-            'order'    => 'sometimes|in:asc,desc',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-            'page'     => 'sometimes|integer|min:1',
-        ]);
-        
-        $q = Event::query()
-            ->where('status', 'published')
-            ->with('organizer:id,name')
-            ->withSum(['bookings as confirmed_quantity' => function ($q) {
-                $q->where('status', 'confirmed');
-            }], 'quantity');
+        $q = \App\Models\Event::query()
+            ->where('status', 'published');
 
-        if (!empty($validated['search'])) {
-            $s = $validated['search'];
-            $q->where(function ($w) use ($s) {
-                $w->where('title', 'like', "%{$s}%")
-                    ->orWhere('description', 'like', "%{$s}%");
+        if ($s = trim($rq->get('search', ''))) {
+            $q->where(function($qq) use ($s) {
+                $qq->where('title','ilike',"%{$s}%")
+                   ->orWhere('description','like',"%{$s}%");
             });
         }
-        
-        if (!empty($validated['location'])) {
-            $q->where('location', 'like', "%{$validated['location']}%");
+        if ($loc = trim($rq->get('location', ''))) {
+            $q->where('location','ilike',"%{$loc}%");
+        }
+        if ($cat = trim($rq->get('category', ''))) {
+            $q->where('category',$cat);
         }
 
-        if (!empty($validated['category'])) {
-            $q->where('category', $validated['category']);
-        }
-        
-        $field = $validated['field'] ?? 'starts_at';
-        $order = $validated['order'] ?? 'asc';
+        // rendezés (alapértelmezés: starts_at ASC)
+        $field = in_array($rq->get('field'), ['starts_at','title','location','category']) ? $rq->get('field') : 'starts_at';
+        $order = $rq->get('order') === 'desc' ? 'desc' : 'asc';
         $q->orderBy($field, $order);
-        
-        $perPage = (int)($validated['per_page'] ?? 10);
-        
-        $result = EventResource::collection(
-            $q->paginate($perPage)
-        );
 
-        return $result;
+        $perPage = (int)($rq->get('perPage', 12));
+        $perPage = max(5, min($perPage, 50));
+
+        return response()->json(
+            $q->paginate($perPage)->appends($rq->query())
+        );
     }
     
     /**
