@@ -62,7 +62,7 @@ Route::middleware(['auth:sanctum','role:organizer|admin', EnsureUserIsNotBlocked
 Route::middleware(['auth:sanctum', EnsureUserIsNotBlocked::class])
     ->controller(BookingController::class)->group(function() {
         //
-        Route::post('/events/{event}/bookings', 'store')->name('booking.store')
+        Route::post('/bookings', 'store')->name('booking.store')
             ->middleware('permission:booking.create');
         //
         Route::get('/my/bookings', 'myBookings')->name('my.bookings')

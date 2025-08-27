@@ -1,50 +1,80 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import EventsService from '../../services/EventService.js'
-import BookingService from '../../services/BookingService.js'
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import EventsService from '../../services/EventService.js';
+import BookingsService from '../../services/BookingsService.js';
+import { useAuthStore } from '../../stores/auth.js';
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
+const eventId = Number(route.params.id);
+const qty = ref(1);
+const loading = ref(true);
+const error = ref(null);
+const success = ref(null);
+const eventItem = ref(null);
+const auth = useAuthStore();
 
-const loading = ref(true)
-const error = ref(null)
-const eventItem = ref(null)
+const isAuth = computed(() => auth.isAuthenticated);
 
-const qty = ref(1)
-const bookingState = ref({ loading: false, success: null, err: null })
+const bookingState = ref({ loading: false, success: null, err: null });
 
-function fmt(dt) { return dt ? new Date(dt).toLocaleString() : '—' }
+function fmt(dt) { return dt ? new Date(dt).toLocaleString() : '—' };
+
+function goLogin() {
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
 
 async function load() {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
     try {
-        const data = await EventsService.show(route.params.id)
+        const data = await EventsService.show(route.params.id);
         // Egységesítés: snake_case kulcsokat használunk a template-ben
-        eventItem.value = data
+        eventItem.value = data;
     } catch (e) {
-        error.value = 'Nem található az esemény vagy hiba történt.'
+        error.value = 'Nem található az esemény vagy hiba történt.';
     } finally {
-        loading.value = false
+        loading.value = false;
     }
 }
 
-async function book() {
-    bookingState.value = { loading: true, success: null, err: null }
+async function book()
+{
+    if (!isAuth.value) {
+        return goLogin();
+    }
+
+    loading.value = true;
+    error.value = null;
+    success.value = null;
+    /*
     try {
-        const payload = { event_id: eventItem.value.id, quantity: qty.value }
-        const resp = await BookingService.create(payload)
-        bookingState.value.success = resp
+        const res = await BookingsService.create({ event_id: eventId, quantity: qty.value });
+        console.log('Show res',res);
+        const bookingId = res.bookingId ?? res.id ?? res.booking?.id;
+        const q = res.quantity ?? res.booking?.quantity;
+        success.value = `Foglalás OK (#${bookingId}, db: ${q})`;
     } catch (e) {
-        // egyszerű hibaüzenet
-        bookingState.value.err = e?.response?.data?.message || 'A foglalás nem sikerült.'
+        error.value = e?.response?.data?.message || 'Foglalás sikertelen.';
     } finally {
-        bookingState.value.loading = false
+        loading.value = false;
     }
+    */
+    
+    try {
+        const res = await BookingsService.create({ event_id: eventId, quantity: qty.value });
+        console.log('Show.vue res', res);
+        success.value = `Foglalás OK (#${res.bookingId}, db: ${res.quantity})`;
+    } catch (e) {
+        error.value = e?.response?.data?.message || 'Foglalás sikertelen.';
+    } finally {
+        loading.value = false;
+    }
+    
 }
 
-onMounted(load)
+onMounted(load);
 </script>
 
 <template>
@@ -78,42 +108,25 @@ onMounted(load)
             </div>
 
             <!-- Foglalás doboz -->
-            <div class="mt-6 border rounded p-4">
-                <h2 class="font-semibold mb-3">Foglalás</h2>
-
-                <div class="flex items-center gap-3">
-                    <label class="text-sm">Mennyiség (max. 5):</label>
-                    <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        v-model.number="qty"
-                        class="border rounded p-2 w-24"
-                    />
-                    <button
-                        class="px-4 py-2 border rounded hover:bg-gray-50"
-                        :disabled="bookingState.loading || qty<1 || qty>5 || eventItem.status!=='published'"
-                        @click="book"
-                    >
-                        {{ bookingState.loading ? 'Küldés…' : 'Foglalok' }}
+            <div class="mt-4 flex items-center gap-2">
+                
+                <template v-if="isAuth">
+                    <input type="number" v-model.number="qty" min="1" :max="5" class="border rounded p-1 w-16" />
+                    <button class="px-3 py-1 border rounded hover:bg-gray-50" :disabled="loading" @click="book">
+                        {{ loading ? 'Foglalás…' : 'Foglalás' }}
                     </button>
-                </div>
+                </template>
 
-                <div v-if="bookingState.err" class="mt-3 text-red-600">
-                    {{ bookingState.err }}
-                </div>
+                <template v-else>
+                    <span class="text-sm text-gray-600">Foglaláshoz be kell jelentkezned.</span>
+                    <button class="px-3 py-1 border rounded hover:bg-gray-50" @click="goLogin">Login</button>
+                </template>
 
-                <div v-if="bookingState.success" class="mt-3 text-green-700">
-                    Sikeres foglalás!
-                    <span v-if="bookingState.success.bookingId">
-                        Azonosító: <b>{{ bookingState.success.bookingId }}</b>
-                    </span>
-                </div>
-
-                <div class="mt-2 text-xs opacity-70">
-                    Megjegyzés: be nem lépett felhasználónál a backend jogosultságot ellenőrizhet (401/403).
-                </div>
             </div>
+
+            <p v-if="error" class="text-red-600 text-sm mt-2">{{ error }}</p>
+            <p v-if="success" class="text-green-700 text-sm mt-2">{{ success }}</p>
+            
         </div>
     </section>
 </template>

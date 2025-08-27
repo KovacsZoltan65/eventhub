@@ -4,3 +4,6 @@ npm create vite@latest frontend -- --template vue
 cd frontend
 npm i axios vue-router pinia
 # (opcionális) UI: Tailwind vagy PrimeVue – most nem kötelező
+
+
+php artisan route:list | findstr booking

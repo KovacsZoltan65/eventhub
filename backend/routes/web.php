@@ -18,10 +18,9 @@ Route::get('/debug/csrf', function (Request $r) {
 
 //Route::prefix('api')->group(function () {
     Route::post('/login',  [AuthController::class,'login']);
-    //Route::post('/login',  function(){ dd('route login'); })->middleware('web');
     
     //Route::post('/logout', [AuthController::class,'logout'])->middleware(['auth:sanctum','web']);
-    //Route::post('/logout', [AuthController::class,'logout'])->middleware('auth');
+    Route::post('/logout', [AuthController::class,'logout'])->middleware('auth');
 //});
 
 //Route::post('/login',  [AuthController::class,'login']);              // NINCS /api prefix

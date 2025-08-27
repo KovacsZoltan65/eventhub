@@ -38,15 +38,9 @@ class BookingController extends Controller
     
     public function store(StoreBookingRequest $request)
     {
-        $userId = auth()->id() ?? (int) (env('SEED_USER_ID', 3));
-        
-        $validated = $request->validate([
-            'event_id' => ['required', Rule::exists('events', 'id')],
-            'quantity' => ['required', 'integer', 'min:1', 'max:5'],
-        ]);
+        $userId = auth()->id();
 
-        $eventId = (int) $validated['event_id'];
-        $reqQty = (int) $validated['quantity'];
+        $eventId = $request->event_id;
         
         $event = Event::find($eventId);
         
@@ -59,7 +53,7 @@ class BookingController extends Controller
         $reqQty = (int)$request->integer('quantity');
         $maxPerUser = (int) config('booking.max_per_user_per_event', 5);
         
-        $result = DB::transaction(function() use($userId, $eventId, $reqQty, $maxPerUser) {
+        $result = DB::transaction(function() use($user, $eventId, $reqQty, $maxPerUser) {
             // Sorzár a versenyhelyzet ellen
             $eventRow = DB::table('events')
                 ->where('id', $eventId)
@@ -67,7 +61,7 @@ class BookingController extends Controller
                 ->first();
             
             // Eddig megerősített mennyiség ettől a usertől erre az eseményre
-            $already = (int) Booking::where('user_id', $userId)
+            $already = (int) Booking::where('user_id', $user->id)
                 ->where('event_id', $eventId)
                 ->where('status', 'confirmed')
                 ->sum('quantity');
@@ -87,7 +81,7 @@ class BookingController extends Controller
             }
             
             $booking = Booking::create([
-                'user_id'    => $userId,
+                'user_id'    => $user->id,
                 'event_id'   => $eventId,
                 'quantity'   => $reqQty,
                 'status'     => 'confirmed', // jelenleg azonnal megerősítjük
@@ -95,7 +89,7 @@ class BookingController extends Controller
             ]);
             
             activity()
-                ->causedBy($userId)
+                ->causedBy($user)
                 ->performedOn($booking)
                 ->withProperties([
                     'event_id' => $eventId,
@@ -104,8 +98,27 @@ class BookingController extends Controller
                 ->event('booking.create')
                 ->log('Booking created');
             
-            return $booking->load('event:id,title,starts_at,location');
+            $booking->load(['event:id,title,starts_at,location']);
+            
+            $result = [
+                'bookingId'  => $booking->id,
+                'quantity'   => (int) $booking->quantity,
+                'totalPrice' => (int) $booking->quantity * (int) $booking->unit_price,
+                'timestamp'  => now()->toISOString(),
+                'event'      => [
+                    'id'        => $booking->event->id,
+                    'title'     => $booking->event->title,
+                    'starts_at' => $booking->event->starts_at?->toISOString(),
+                    'location'  => $booking->event->location,
+                ],
+            ];
+            
+            \Log::info(print_r($result, true));
+            
+            return response()->json($result, Response::HTTP_CREATED);
         });
+        
+        return $result;
     }
     
     public function cancel(Request $r, Booking $booking)

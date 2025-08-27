@@ -20,21 +20,22 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-  const auth = useAuthStore();
+  const auth = useAuthStore()
 
-  // első oldalbetöltéskor próbáljuk visszaállítani a session-t
+  // Session visszaállítás első betöltéskor – csendes (nem dob hibát)
   if (!auth.user && to.path !== '/login') {
-    try { await auth.fetchMe(); } catch {}
+    await auth.fetchMe()
   }
 
+  // Csak a requiresAuth route-okra dobjunk loginra
   if (to.meta?.requiresAuth && !auth.isAuthenticated) {
-    return { path: '/login', query: { redirect: to.fullPath } };
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
 
-  if (to.meta?.roles?.length && auth.isAuthenticated &&
-      !to.meta.roles.includes(auth.role)) {
-    return { path: '/' };
+  // Role check, ha van roles meta
+  if (to.meta?.roles?.length && auth.isAuthenticated && !to.meta.roles.includes(auth.role)) {
+    return { path: '/' }
   }
 
-  return true;
-});
+  return true
+})

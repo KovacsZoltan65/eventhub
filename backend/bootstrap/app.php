@@ -1,25 +1,29 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-
 // +++ HIBAKEZELÉSHEZ SZÜKSÉGES USE +++
-use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Symfony\Component\HttpKernel\Exception\ThrottleRequestsException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+
 //use Throwable;
 
 // +++ SPATIE MIDDLEWAREK +++
-use Spatie\Permission\Middlewares\RoleMiddleware;
-use Spatie\Permission\Middlewares\PermissionMiddleware;
-use Spatie\Permission\Middlewares\RoleOrPermissionMiddleware;
+
 
 // +++ SANCTUM STATEFUL +++
+
+
+use App\Http\Middleware\EnsureUserIsNotBlocked;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\ThrottleRequestsException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -35,15 +39,21 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Saját middleware alias (ha szeretnél rövid nevet használni):
         $middleware->alias([
-            'blocked' => \App\Http\Middleware\EnsureUserIsNotBlocked::class,
+            'blocked' => EnsureUserIsNotBlocked::class,
+            // Spatie route middleware aliasok
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
         
+        /*
         // Spatie route middleware aliasok
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        */
         
         // Sanctum SPA stateful az API csoporton
         $middleware->appendToGroup('api', EnsureFrontendRequestsAreStateful::class);
@@ -87,7 +97,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         
         // Általános fallback API kérésekre – ne szivárogjon stack trace
-        $exceptions->render(function (\Throwable $e, $request) use ($isApi) {
+        $exceptions->render(function (Throwable $e, $request) use ($isApi) {
             if ($isApi($request)) {
                 $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;
                 if ($status === 500) {
