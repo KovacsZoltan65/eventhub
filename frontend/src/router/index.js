@@ -11,8 +11,9 @@ const routes = [
   { path: '/events/:id', name: 'events.show', component: () => import('@/pages/events/Show.vue'), meta: { requiresAuth: false } },
 
   // Admin
-  { path: '/admin', name: 'admin.index', component: () => import('@/pages/admin/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
+  //{ path: '/admin', name: 'admin.index', component: () => import('@/pages/admin/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
   { path: '/admin/users', name: 'admin.users', component: () => import('@/pages/admin/users/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
+  { path: '/admin/bookings', name: 'admin.bookings', component: () => import('@/pages/admin/bookings/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] }, },
 
   // Organizer
   { path: '/organizer', name: 'organizer.index', component: () => import('@/pages/organizer/Index.vue'), meta: { requiresAuth: true, roles: ['admin','organizer'] } },

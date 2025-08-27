@@ -7,3 +7,8 @@ npm i axios vue-router pinia
 
 
 php artisan route:list | findstr booking
+
+**Seed felhasználók (példa):**
+- admin: `admin@eventhub.local` / `Admin123!`
+- organizer: `org@eventhub.local` / `Org123!`
+- user: `user@eventhub.local` / `User123!`

@@ -98,14 +98,23 @@ async function publish(row) {
 
 async function cancelEvent(row) {
     if (!confirm(`Biztosan lemondod? "${row.title}"`)) return;
-    try { await OrganizerEventsService.cancel(row.id); await fetchRows(filters.page); }
-    catch (e) { alert(e?.response?.data?.message || 'Lemondási hiba.'); }
+    try {
+        await OrganizerEventsService.cancel(row.id); 
+        await fetchRows(filters.page);
+    } catch (e) {
+        alert(e?.response?.data?.message || 'Lemondási hiba.');
+    }
 }
 
 async function remove(row) {
-    if (!confirm(`Biztosan törlöd? "${row.title}"`)) return;
-    try { await OrganizerEventsService.destroy(row.id); await fetchRows(rows.value.length > 1 ? filters.page : Math.max(1, filters.page - 1)); }
-    catch (e) { alert(e?.response?.data?.message || 'Törlési hiba.'); }
+    if (!confirm(`Biztosan törlöd? "${row.title}"`)) 
+        return;
+    try {
+        await OrganizerEventsService.destroy(row.id); 
+        await fetchRows(rows.value.length > 1 ? filters.page : Math.max(1, filters.page - 1)); 
+    } catch (e) {
+        alert(e?.response?.data?.message || 'Törlési hiba.');
+    }
 }
 </script>
 

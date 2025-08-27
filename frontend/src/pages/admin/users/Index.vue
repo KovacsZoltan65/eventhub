@@ -63,7 +63,6 @@ async function toggle(u) {
     togglingId.value = u.id;
     const old = u.is_blocked;
 
-    // optimista UI
     u.is_blocked = next;
 
     try {
@@ -85,99 +84,99 @@ onMounted(() => fetchUsers(1));
         <h1 class="text-2xl font-semibold">Felhasználók</h1>
 
         <div class="flex flex-wrap items-center gap-2">
-        <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Keresés név vagy e-mail szerint…"
-            class="border rounded px-3 py-1 w-64"
-        />
-        <select v-model.number="filters.perPage" class="border rounded px-2 py-1">
-            <option :value="10">10</option>
-            <option :value="12">12</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-        </select>
-        <select v-model="filters.field" class="border rounded px-2 py-1">
-            <option value="name">Név</option>
-            <option value="email">Email</option>
-            <option value="created_at">Regisztrált</option>
-            <option value="is_blocked">Tiltva?</option>
-        </select>
-        <select v-model="filters.order" class="border rounded px-2 py-1">
-            <option value="asc">Növekvő</option>
-            <option value="desc">Csökkenő</option>
-        </select>
-        <button @click="fetchUsers(1)" class="px-3 py-1 border rounded hover:bg-gray-50">
-            Szűrés
-        </button>
-    </div>
+            <input
+                v-model="filters.search"
+                type="text"
+                placeholder="Keresés név vagy e-mail szerint…"
+                class="border rounded px-3 py-1 w-64"
+            />
+            <select v-model.number="filters.perPage" class="border rounded px-2 py-1">
+                <option :value="10">10</option>
+                <option :value="12">12</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+            </select>
+            <select v-model="filters.field" class="border rounded px-2 py-1">
+                <option value="name">Név</option>
+                <option value="email">Email</option>
+                <option value="created_at">Regisztrált</option>
+                <option value="is_blocked">Tiltva?</option>
+            </select>
+            <select v-model="filters.order" class="border rounded px-2 py-1">
+                <option value="asc">Növekvő</option>
+                <option value="desc">Csökkenő</option>
+            </select>
+            <button @click="fetchUsers(1)" class="px-3 py-1 border rounded hover:bg-gray-50">
+                Szűrés
+            </button>
+        </div>
 
-    <div class="overflow-x-auto border rounded">
-        <table class="min-w-full divide-y">
-            <thead class="bg-gray-50">
-            <tr>
-                <th class="text-left px-3 py-2">ID</th>
-                <th class="text-left px-3 py-2">Név</th>
-                <th class="text-left px-3 py-2">Email</th>
-                <th class="text-left px-3 py-2">Regisztrált</th>
-                <th class="text-left px-3 py-2">Tiltva?</th>
-                <th class="px-3 py-2"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-if="loading">
-                <td colspan="6" class="px-3 py-6 text-center text-gray-500">Betöltés…</td>
-            </tr>
-            <tr v-else-if="rows.length === 0">
-                <td colspan="6" class="px-3 py-6 text-center text-gray-500">Nincs találat.</td>
-            </tr>
-            <tr v-for="u in rows" :key="u.id" class="odd:bg-white even:bg-gray-50">
-                <td class="px-3 py-2">{{ u.id }}</td>
-                <td class="px-3 py-2">{{ u.name }}</td>
-                <td class="px-3 py-2">{{ u.email }}</td>
-                <td class="px-3 py-2">{{ fmt(u.created_at) }}</td>
-                <td class="px-3 py-2">
-                    <span
-                        class="inline-flex items-center px-2 py-0.5 rounded text-xs"
-                        :class="u.is_blocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                    >
-                        {{ u.is_blocked ? 'Igen' : 'Nem' }}
-                    </span>
-                </td>
-                <td class="px-3 py-2">
-                    <button
-                        class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-                        :disabled="togglingId === u.id"
-                        @click="toggle(u)"
-                    >
-                        {{ u.is_blocked ? 'Engedélyezés' : 'Tiltás' }}
-                    </button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="overflow-x-auto border rounded">
+            <table class="min-w-full divide-y">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-3 py-2">ID</th>
+                    <th class="text-left px-3 py-2">Név</th>
+                    <th class="text-left px-3 py-2">Email</th>
+                    <th class="text-left px-3 py-2">Regisztrált</th>
+                    <th class="text-left px-3 py-2">Tiltva?</th>
+                    <th class="px-3 py-2"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="loading">
+                    <td colspan="6" class="px-3 py-6 text-center text-gray-500">Betöltés…</td>
+                </tr>
+                <tr v-else-if="rows.length === 0">
+                    <td colspan="6" class="px-3 py-6 text-center text-gray-500">Nincs találat.</td>
+                </tr>
+                <tr v-for="u in rows" :key="u.id" class="odd:bg-white even:bg-gray-50">
+                    <td class="px-3 py-2">{{ u.id }}</td>
+                    <td class="px-3 py-2">{{ u.name }}</td>
+                    <td class="px-3 py-2">{{ u.email }}</td>
+                    <td class="px-3 py-2">{{ fmt(u.created_at) }}</td>
+                    <td class="px-3 py-2">
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs"
+                            :class="u.is_blocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+                        >
+                            {{ u.is_blocked ? 'Igen' : 'Nem' }}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2">
+                        <button
+                            class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
+                            :disabled="togglingId === u.id"
+                            @click="toggle(u)"
+                        >
+                            {{ u.is_blocked ? 'Engedélyezés' : 'Tiltás' }}
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div v-if="meta" class="flex items-center gap-2">
-        <button
-            class="px-2 py-1 border rounded disabled:opacity-50"
-            :disabled="!meta?.links?.prev"
-            @click="fetchUsers(meta.current_page - 1)"
-        >
-            ◀
-        </button>
-        <span>Oldal {{ meta.current_page }} / {{ meta.last_page }}</span>
-        <button
-            class="px-2 py-1 border rounded disabled:opacity-50"
-            :disabled="!meta?.links?.next"
-            @click="fetchUsers(meta.current_page + 1)"
-        >
-            ▶
-        </button>
-    </div>
+        <div v-if="meta" class="flex items-center gap-2">
+            <button
+                class="px-2 py-1 border rounded disabled:opacity-50"
+                :disabled="!meta?.links?.prev"
+                @click="fetchUsers(meta.current_page - 1)"
+            >
+                ◀
+            </button>
+            <span>Oldal {{ meta.current_page }} / {{ meta.last_page }}</span>
+            <button
+                class="px-2 py-1 border rounded disabled:opacity-50"
+                :disabled="!meta?.links?.next"
+                @click="fetchUsers(meta.current_page + 1)"
+            >
+                ▶
+            </button>
+        </div>
 
-    <p v-if="error" class="text-red-600">{{ error }}</p>
-    <p v-if="success" class="text-green-700">{{ success }}</p>
-  </div>
+        <p v-if="error" class="text-red-600">{{ error }}</p>
+        <p v-if="success" class="text-green-700">{{ success }}</p>
+    </div>
 
 </template>

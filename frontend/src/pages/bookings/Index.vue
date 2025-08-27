@@ -34,7 +34,9 @@ async function cancelBooking(b) {
         const updated = await BookingsService.cancel(b.id);
         // frissítsük a sor adatait a kapott válasszal
         const idx = rows.value.findIndex(r => r.id === b.id);
+
         if (idx !== -1) rows.value[idx] = { ...rows.value[idx], ...updated }
+
         success.value = `Foglalás lemondva (#${b.id}).`;
     } catch (e) {
         error.value = e?.response?.data?.message || 'Lemondás sikertelen.';
@@ -77,7 +79,9 @@ async function fetchData() {
 
 function toPage(p) {
     if (!meta.value) return;
+    
     if (p < 1 || p > meta.value.last_page) return;
+
     page.value = p;
 }
 

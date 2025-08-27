@@ -31,8 +31,10 @@ async function doLogout() {
 
                 <!-- FOGLALÁSAIM -->
                 <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim | </RouterLink>
+                <RouterLink v-if="hasRole('admin')" to="/admin/bookings">Admin / Foglalások | </RouterLink>
 
                 <span class="ml-auto">
+                    <span>Felhasználó: <strong>{{ displayName }}</strong></span>
                     <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
                     <button v-else @click="auth.logout()">Logout</button>
                 </span>
