@@ -13,26 +13,42 @@ use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
 {
-    public function myBookings(Request $request)
+    public function indexMine(Request $request)
     {
         $validated = $request->validate([
-            'status'   => 'sometimes|in:pending,confirmed,cancelled',
+            'status'   => 'sometimes|nullable|in:pending,confirmed,cancelled',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'page'     => 'sometimes|integer|min:1',
+            'order'    => 'sometimes|in:asc,desc',
+            'field'    => 'sometimes|in:created_at,starts_at',
         ]);
         
+        $user = $request->user();
+        
         $q = Booking::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $user->id)
             ->with(['event:id,title,starts_at,location']);
-
-        if (!empty($validated['status'])) {
+        
+        if( !empty($validated['status']) ) {
             $q->where('status', $validated['status']);
         }
         
-        $q->latest('created_at');
+        $field = $validated['field'] ?? 'created_at';
+        $order = $validated['order'] ?? 'asc';
+        
+        // ha starts_at-ra rendezünk, join nélkül megtehetjük a kapcsolaton keresztül is:
+        if ($field === 'starts_at') {
+            $q->join('events', 'events.id', '=', 'bookings.event_id')
+                ->orderBy('events.starts_at', $order)
+                ->select('bookings.*');
+        } else {
+            $q->orderBy($field, $order);
+        }
+        
+        $perPage = (int) ($validated['per_page'] ?? 10);
         
         return BookingResource::collection(
-            $q->paginate((int)($validated['per_page'] ?? 10))
+            $q->paginate($perPage)
         );
     }
     

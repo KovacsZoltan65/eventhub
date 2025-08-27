@@ -27,6 +27,11 @@ async function doLogout() {
                 >
                     Események
                 </RouterLink>
+
+                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">
+                    Foglalásaim
+                </RouterLink>
+
             </nav>
 
             <div class="ms-auto flex items-center gap-3 text-sm">

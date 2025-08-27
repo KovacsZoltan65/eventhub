@@ -3,15 +3,16 @@ import { useAuthStore } from '@/stores/auth.js';
 
 const routes = [
   { path: '/', redirect: '/events' },
-  { path: '/login', component: () => import('@/pages/auth/Login.vue') },
-  { path: '/events', component: () => import('@/pages/events/Index.vue') },
+  { path: '/login',      component: () => import('@/pages/auth/Login.vue') },
+  { path: '/events',     component: () => import('@/pages/events/Index.vue') },
   { path: '/events/:id', component: () => import('@/pages/events/Show.vue') },
 
   // védett útvonalak
-  { path: '/admin', component: () => import('@/pages/admin/Index.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] } },
-  { path: '/organizer', component: () => import('@/pages/organizer/Index.vue'),
-    meta: { requiresAuth: true, roles: ['admin','organizer'] } },
+  { path: '/admin',     component: () => import('@/pages/admin/Index.vue'), meta: { requiresAuth: true, roles: ['admin'] } },
+  { path: '/organizer', component: () => import('@/pages/organizer/Index.vue'), meta: { requiresAuth: true, roles: ['admin','organizer'] } },
+  // Foglalások
+  { path: '/bookings',  component: () => import('@/pages/bookings/Index.vue'), meta: { requiresAuth: true }, name: 'bookings.mine', },
+
 ];
 
 export const router = createRouter({

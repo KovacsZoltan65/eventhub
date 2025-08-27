@@ -22,7 +22,7 @@ class BookingsService
         // ÁLLAPOTOT MÓDOSÍTÓ HÍVÁS → originClient + /api útvonal
         const { data } = await originClient.post( `/api${this.url}`, { event_id, quantity });
 
-        const normalized = {
+        return {
             bookingId: data.bookingId ?? data.id ?? data.booking?.id,
             quantity: data.quantity ?? data.booking?.quantity ?? 0,
             totalPrice: data.totalPrice ?? (data.quantity ?? data.booking?.quantity ?? 0) * (data.unit_price ?? 0),
@@ -30,15 +30,26 @@ class BookingsService
             event: data.event ?? data.booking?.event ?? null,
             raw: data, // ha mégis kell az eredeti
         };
-
-        return normalized;
     }
 
-    async myList(params = { page: 1, perPage: 10 })
-    {
-        // GET nem igényel CSRF headert → mehet apiClienttel
-        const { data } = await apiClient.get(`${this.url}`, { params: { page: params.page, per_page: params.perPage } });
-        return data;
+    // ÚJ: saját foglalások listája
+    async listMine(params = {}) {
+        // Auth-olt GET → originClient (cookie-kkal)
+        const query = {
+            status: params.status ?? '',
+            page: params.page ?? 1,
+            per_page: params.perPage ?? 10,   // backend 'per_page'-t vár
+            field: params.field ?? 'created_at',
+            order: params.order ?? 'desc',
+        };
+
+        // üres stringeket távolítsunk el a query-ből
+        Object.keys(query).forEach((k) => {
+            if (query[k] === '') delete query[k]
+        });
+
+        const { data } = await originClient.get('/api/my/bookings', { params: query });
+        return data; // { data: [...], links: {...}, meta: {...} }
     }
 
 }

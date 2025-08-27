@@ -64,8 +64,8 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotBlocked::class])
         //
         Route::post('/bookings', 'store')->name('booking.store')
             ->middleware('permission:booking.create');
-        //
-        Route::get('/my/bookings', 'myBookings')->name('my.bookings')
+        // Saját foglalások
+        Route::get('/my/bookings', 'indexMine')->name('bookings.mine')
             ->middleware('permission:booking.view.mine');
         //
         Route::patch('/my/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('my.bookings.cancel')
