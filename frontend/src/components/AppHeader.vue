@@ -23,20 +23,21 @@ async function doLogout() {
 
             <nav class="flex items-center gap-4 text-sm">
 
+
                 <!-- ESEMÉNYEK -->
-                <RouterLink to="/events" class="hover:underline">Események | </RouterLink>
+                <RouterLink to="/events" class="hover:underline">Események</RouterLink>
 
                 <!-- FELHASZNÁLÓK (role: admin) -->
-                <RouterLink v-if="hasRole('admin')" to="/admin/users">Admin / Felhasználók | </RouterLink>
+                <RouterLink v-if="hasRole('admin')" to="/admin/users">Admin / Felhasználók</RouterLink>
 
                 <!-- FOGLALÁSAIM -->
-                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim | </RouterLink>
-                <RouterLink v-if="hasRole('admin')" to="/admin/bookings">Admin / Foglalások | </RouterLink>
+                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim</RouterLink>
+                <RouterLink v-if="hasRole('admin')" to="/admin/bookings">Admin / Foglalások</RouterLink>
 
                 <span class="ml-auto">
                     <span>Felhasználó: <strong>{{ displayName }}</strong></span>
-                    <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
-                    <button v-else @click="auth.logout()">Logout</button>
+                    <RouterLink class="btn btn-eh" v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
+                    <button class="btn btn-eh booking-btn" v-else @click="auth.logout()">Logout</button>
                 </span>
             </nav>
 

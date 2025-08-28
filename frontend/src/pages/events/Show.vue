@@ -17,20 +17,35 @@ const auth = useAuthStore();
 
 const isAuth = computed(() => auth.isAuthenticated);
 
-const bookingState = ref({ loading: false, success: null, err: null });
+//const bookingState = ref({ loading: false, success: null, err: null });
 
-function fmt(dt) { return dt ? new Date(dt).toLocaleString() : '—' };
+/**
+ * Formáz egy dátumot ember által olvasható formára.
+ * @param {string|number|Date} dt dátum (ISO 8601 string, timestamp, vagy Date-objektum)
+ * @returns {string} Formázott dátum, vagy `'—'` ha a dátum nincs megadva
+ */
+const fmt = (dt) => {
+    return dt ? new Date(dt).toLocaleString() : '—';
+};
 
-function goLogin() {
+/**
+ * A bejelentkezés oldalra navigál a jelenlegi oldal URL-jével, mint redirect cél
+ */
+const goLogin = () => {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
-async function load() {
+/**
+ * Betölti az eseményt a megadott ID-val.
+ * Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-ra.
+ */
+const load = async () => {
     loading.value = true;
     error.value = null;
+    
     try {
         const data = await EventsService.show(route.params.id);
-        // Egységesítés: snake_case kulcsokat használunk a template-ben
+        
         eventItem.value = data;
     } catch (e) {
         error.value = 'Nem található az esemény vagy hiba történt.';
@@ -39,21 +54,41 @@ async function load() {
     }
 }
 
-async function book()
-{
+/**
+ * Foglalja le az eseményt a megadott mennyiségben.
+ * Ha nem vagy bejelentkezve, akkor a bejelentkezés oldalra navigál.
+ * A foglalás eredményéről a `success`-en keresztül kapunk visszajelzést.
+ * Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-ra.
+ */
+const book = async () => {
+
+    // Ha nincs bejelentkezve, akkor a bejelentkezés oldalra navigálunk
     if (!isAuth.value) {
         return goLogin();
     }
 
+    // Foglalás indítás előtt nulla állapotot állítunk be
     loading.value = true;
     error.value = null;
     success.value = null;
-    
+
     try {
-        const res = await BookingsService.create({ event_id: eventId, quantity: qty.value });
+        // Foglalás létrehozása a megadott eseményhez és mennyiségben
+        // A foglalás eredményéről a res objektumon keresztül kapunk visszajelzést
+        const res = await BookingsService.create({ 
+            event_id: eventId, // az esemény ID-ja
+            quantity: qty.value, // a foglalni kívánt mennyiség
+        });
         
+        // A foglalás sikeres, megjelenítjük a foglalás eredményét
+        // A success változóban tároljuk a sikeresség üzenetét
         success.value = `Foglalás OK (#${res.bookingId}, db: ${res.quantity})`;
+
     } catch (e) {
+        // A foglalás nem sikerült, hiba történt.
+        // A hibaüzenetet beállítjuk a `error` változóban
+        // A hibaüzenet egy része a szerver által visszaadott JSON-ban
+        // található `message` kulcs alatt, ha van ilyen.
         error.value = e?.response?.data?.message || 'Foglalás sikertelen.';
     } finally {
         loading.value = false;
@@ -62,11 +97,12 @@ async function book()
 }
 
 onMounted(load);
+
 </script>
 
 <template>
     <section class="container mx-auto p-4" style="max-width:900px">
-        <button class="mb-3 px-3 py-1 border rounded" @click="router.back()">← Vissza</button>
+        <button class="mb-3 px-3 py-1 border rounded btn btn-eh" @click="router.back()">← Vissza</button>
 
         <div v-if="loading">Betöltés…</div>
         <div v-else-if="error" class="text-red-600">{{ error }}</div>
@@ -75,20 +111,28 @@ onMounted(load);
             <h1 class="text-2xl font-semibold">{{ eventItem.title }}</h1>
             <div class="opacity-70">{{ fmt(eventItem.starts_at) }} • {{ eventItem.location }}</div>
 
-            <div class="flex flex-wrap gap-3 text-sm">
-                <span class="px-2 py-0.5 border rounded">Kategória: {{ eventItem.category || '—' }}</span>
-                <span class="px-2 py-0.5 border rounded">Státusz: {{ eventItem.status }}</span>
+            <div class="space-y-2 text-sm">
+                <div>
+                    <strong>Kategória: </strong>
+                    <span class="ml-1">{{ eventItem.category || '—' }}</span>
+                </div>
+                <div>
+                    <strong>Státusz: </strong>
+                    <span class="ml-1">{{ eventItem.status }}</span>
+                </div>
             </div>
+
 
             <p class="mt-2 whitespace-pre-line">{{ eventItem.description }}</p>
 
+            <!-- Aktuális állapot -->
             <div class="grid grid-cols-2 gap-4 mt-4">
                 <div class="border rounded p-3">
-                    <div class="text-sm">Kapacitás</div>
+                    <div class="text-sm"><strong>Kapacitás</strong></div>
                     <div class="text-xl font-semibold">{{ eventItem.capacity }}</div>
                 </div>
                 <div class="border rounded p-3">
-                    <div class="text-sm">Szabad hely</div>
+                    <div class="text-sm"><strong>Szabad hely</strong></div>
                     <!-- a backend most már dinamikusan számolja (capacity - confirmed) és 'remaining_seats' néven adja -->
                     <div class="text-xl font-semibold">{{ eventItem.remaining_seats ?? '—' }}</div>
                 </div>
@@ -98,15 +142,26 @@ onMounted(load);
             <div class="mt-4 flex items-center gap-2">
                 
                 <template v-if="isAuth">
-                    <input type="number" v-model.number="qty" min="1" :max="5" class="border rounded p-1 w-16" />
-                    <button class="px-3 py-1 border rounded hover:bg-gray-50" :disabled="loading" @click="book">
+                    <input 
+                        type="number" 
+                        v-model.number="qty" 
+                        min="1" :max="5" 
+                        class="booking-input"
+                    />
+
+                    <button 
+                        class="btn btn-eh booking-btn" 
+                        :disabled="loading" 
+                        @click="book"
+                    >
                         {{ loading ? 'Foglalás…' : 'Foglalás' }}
                     </button>
+
                 </template>
 
                 <template v-else>
                     <span class="text-sm text-gray-600">Foglaláshoz be kell jelentkezned.</span>
-                    <button class="px-3 py-1 border rounded hover:bg-gray-50" @click="goLogin">Login</button>
+                    <button class="btn btn-eh booking-btn" @click="goLogin">Login</button>
                 </template>
 
             </div>

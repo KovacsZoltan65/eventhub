@@ -1,0 +1,278 @@
+.auth-card {
+  width: min(380px, 92%);
+  padding: clamp(1rem, 2vh, 1.5rem) clamp(1rem, 2vw, 1.25rem);
+  border-radius: 12px;
+  background: var(--pico-card-background, var(--pico-background-color));
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  margin-inline: auto;
+}
+
+.auth-actions input[type="email"],
+.auth-actions input[type="password"] {
+  height: clamp(28px, 5vh, 34px);  /* kisebb kijelzőn alacsonyabb */
+  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+  padding: 0 .6rem;
+}
+
+.auth-actions button {
+  height: clamp(32px, 5.5vh, 38px);
+}
+
+/* Login – kompakt mód kifejezetten kisebb (≤768p) magasságokra is jó */
+.auth-wrap{
+  min-height: 100svh;                  /* új viewport unit – jobb mobil/desktopon is */
+  padding-block: clamp(8px, 4vh, 32px);/* kisebb képernyőn kevesebb függőleges padding */
+}
+
+.auth-card{
+  width: min(400px, 92%);
+  padding: clamp(12px, 2.2vh, 18px) clamp(12px, 2vw, 18px);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+
+/* Fejléc a kártyán belül – kisebb betű, kevesebb hely */
+.auth-card h1{
+  font-size: clamp(1.25rem, 2.6vw, 1.7rem);
+  line-height: 1.2;
+  margin: 0 0 .25rem;
+}
+.auth-card header p{
+  margin: 0 0 .5rem;
+  font-size: .95rem;
+}
+
+/* Vonal elválasztó legyen laposabb */
+.auth-card hr{
+  margin: .6rem 0;
+}
+
+/* Űrlap elemek köze kisebb, mezők alacsonyabbak */
+.auth-actions{
+  display: grid;
+  gap: .75rem;
+}
+.auth-actions label{ margin-bottom: .25rem; }
+
+.auth-actions input[type="email"],
+.auth-actions input[type="password"]{
+  height: clamp(35px, 4.2vh, 32px);
+  padding: 0 .6rem;
+  font-size: .93rem;
+}
+
+/* Gomb legyen teljes szélességű, de alacsonyabb */
+.auth-actions button {
+  height: 32px;               /* inputokkal azonos */
+  padding: 0 .9rem;           /* vékonyabb vízszintesen */
+  font-size: 0.9rem;          /* kisebb betűméret */
+  line-height: 1;             /* szorosabb szövegvezetés */
+  border-radius: 8px;         /* kicsit kevésbé puffadt */
+  width: 100%;                /* vagy: max-content, ha nem kell teljes szélesség */
+}
+
+/* Biztonsági háló: ha tényleg alacsony a viewport, még feszesebbre vesszük */
+@media (max-height: 800px){
+  .auth-card{ padding: 12px 14px; }
+  .auth-actions{ gap: .6rem; }
+  .auth-card header p{ font-size: .9rem; }
+}
+
+/* Általános EventHub gomb stílus */
+.btn-eh {
+  height: 32px;            /* kompaktabb */
+  padding: 0 .9rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  border-radius: 8px;
+}
+
+/* Foglalási mennyiség mező */
+.booking-input {
+  height: 37px;           /* mint a login input */
+  padding: 0 .7rem;
+  font-size: .93rem;
+  border-radius: 8px;
+}
+
+input.booking-input[type="number"] {
+  height: 37px !important;
+  padding: 0 .7rem !important;
+  font-size: .93rem;
+  border-radius: 8px !important;
+  width: 150px;
+}
+
+.booking-btn {
+  margin-left: 0.5rem; /* ~8px */
+}
+
+/* Egységes gombok mindenütt */
+.btn-eh {
+  height: 32px;
+  padding: 0 .9rem;
+  font-size: .9rem;
+  line-height: 1;
+  border-radius: 8px;
+}
+
+/* Karcsú inputok/selectek (auth oldali mintára) */
+.input-eh, .select-eh {
+  height: 37px;
+  padding: 0 .7rem;
+  font-size: .93rem;
+  border-radius: 8px;
+}
+
+/* Kicsi, szellős toolbar */
+.toolbar-eh {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+}
+
+/* Egyszerű badge-ek (tiltva/engedélyezve) */
+.badge-eh {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; border: 1px solid var(--pico-muted-border-color, #dcdcdc);
+}
+.badge-eh.green { background: rgba(16,185,129,.12); color:#0f5132; border-color: rgba(16,185,129,.3); }
+.badge-eh.red   { background: rgba(239,68,68,.12);  color:#842029; border-color: rgba(239,68,68,.3); }
+
+/* Táblázat: vékony fej + sorok */
+.table-eh { width: 100%; border-collapse: collapse; }
+.table-eh th, .table-eh td { padding: 10px 12px; border-bottom: 1px solid var(--pico-muted-border-color, #e6e6e6); }
+.table-eh thead th { background: var(--pico-muted-border-color, #f6f6f6); text-align: left; font-weight: 600; }
+.table-eh tbody tr:nth-child(even) { background: rgba(0,0,0,.02); }
+
+/* Apró pagination gombok */
+.pager-eh { display:flex; align-items:center; gap:.5rem; }
+.pager-eh .btn-eh { padding: 0 .6rem; }
+
+/* minden input, select, button ugyanarra a magasságra */
+.toolbar-eh .input-eh,
+.toolbar-eh .select-eh,
+.toolbar-eh .btn-eh {
+  height: 34px;             /* egységes */
+  line-height: 1.2;
+  padding: 0 .7rem;
+}
+
+/* kereső mező: fix magasság + szélesség */
+.toolbar-eh .input-eh {
+  flex: 1;
+  min-width: 240px;
+  max-width: 300px;
+}
+
+/* Szűrés gomb: vizuálisan középre igazítva */
+.toolbar-eh .btn-eh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;            /* ne legyen túl magas */
+  padding-bottom: 0;
+}
+
+/* Toolbar – minden kontroll ugyanabba a sorba, pontos középre igazítással */
+.toolbar-eh {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Egységes magasság és nullázott margók */
+.toolbar-eh .input-eh,
+.toolbar-eh .select-eh,
+.toolbar-eh .btn-eh {
+  height: 34px;
+  padding: 0 .7rem;
+  margin: 0;                 /* fontos: ne legyen extra lefelé húzó margin */
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+/* Gomb tényleges vertikális középre pozicionálása */
+.toolbar-eh .btn-eh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-radius: 8px;
+}
+
+/* Kereső méretezése (rugalmas, de ne legyen túl magas) */
+.toolbar-eh .input-eh {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+}
+
+/* ——— Színek (alap) ——— */
+:root{
+  --eh-primary: #0a66c2;
+  --eh-danger:  #dc3545;
+  --eh-border:  var(--pico-muted-border-color, #e6e6e6);
+  --eh-surface: var(--pico-card-background, var(--pico-background-color));
+}
+
+/* ——— Gomb variánsok (btn-eh alapot már használod) ——— */
+.btn-eh.is-primary { background: var(--eh-primary); color: #fff; border: 1px solid transparent; }
+.btn-eh.is-primary:hover { filter: brightness(1.05); }
+.btn-eh.is-secondary { background: transparent; border: 1px solid var(--eh-border); }
+.btn-eh.is-ghost { background: transparent; border: 0; }
+.btn-eh.is-danger { background: var(--eh-danger); color:#fff; border: 1px solid transparent; }
+
+/* ——— Egységes input csoport ——— */
+.field-eh { display: grid; gap: .35rem; }
+.field-eh .label-eh { font-size: .85rem; opacity: .8; }
+.help-eh { font-size: .8rem; opacity:.7; }
+
+/* ——— Badge-ek (státuszokhoz) ——— */
+.badge-eh {
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--eh-border);
+}
+.badge-eh.is-green  { background: rgba(16,185,129,.10); color:#0f5132; border-color: rgba(16,185,129,.3); }
+.badge-eh.is-yellow { background: rgba(234,179,8,.12);  color:#7a5d00; border-color: rgba(234,179,8,.3); }
+.badge-eh.is-red    { background: rgba(239,68,68,.12);  color:#842029; border-color: rgba(239,68,68,.3); }
+.badge-eh.is-gray   { background: rgba(0,0,0,.06);      color:#333; }
+
+/* ——— Táblázat finomítás: hover + „compact” mód + ragadós fej ——— */
+.table-eh { width:100%; border-collapse:collapse; }
+.table-eh th, .table-eh td { padding:10px 12px; border-bottom:1px solid var(--eh-border); }
+.table-eh thead th { background: var(--eh-border); position: sticky; top: 0; z-index: 1; }
+.table-eh tbody tr:hover { background: rgba(0,0,0,.03); }
+.table-eh.is-compact th, .table-eh.is-compact td { padding:8px 10px; }
+
+/* ——— Alert dobozok (siker/hiba/info) ——— */
+.alert-eh {
+  padding:10px 12px; border-radius:10px; border:1px solid var(--eh-border);
+  background: var(--eh-surface); margin-top:.5rem;
+}
+.alert-eh.is-success { border-color: rgba(16,185,129,.35); background: rgba(16,185,129,.08); }
+.alert-eh.is-error   { border-color: rgba(239,68,68,.35);  background: rgba(239,68,68,.08); }
+.alert-eh.is-info    { border-color: rgba(59,130,246,.35); background: rgba(59,130,246,.08); }
+
+/* ——— Toolbar: 1 sor, középre igazított kontrollok (már használod) ——— */
+.toolbar-eh { display:flex; flex-wrap:nowrap; align-items:center; gap:.5rem; }
+.toolbar-eh .input-eh, .toolbar-eh .select-eh, .toolbar-eh .btn-eh {
+  height:34px; padding:0 .7rem; margin:0; box-sizing:border-box; line-height:1.2;
+}
+.toolbar-eh .input-eh { flex:1; min-width:240px; max-width:320px; }
+.toolbar-eh .btn-eh { display:inline-flex; align-items:center; justify-content:center; }
+
+/* Toolbar változat, ami törhet több sorba is, ha kell */
+.toolbar-eh.wrap {
+  flex-wrap: wrap;
+}
+.toolbar-eh.wrap > * {
+  flex: none;
+}
+
+/* jobbra zárt szám oszlopokhoz */
+.ta-right { text-align: right; }
+
+/* fix szélesség utilok (ha nem akarsz inline style-okat a toolbaron) */
+.w-110{ width:110px; } .w-120{ width:120px; } .w-140{ width:140px; } .w-160{ width:160px; } .w-320{ width:320px; }

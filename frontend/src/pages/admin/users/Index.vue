@@ -17,7 +17,7 @@ const filters = ref({
     order: 'asc',
 });
 
-function fmt(s) {
+const fmt = (s) => {
     if (!s) return '';
 
     const d = new Date(s);
@@ -28,7 +28,7 @@ function fmt(s) {
     });
 };
 
-async function fetchUsers(page = 1) {
+const fetchUsers = async(page = 1) => {
     loading.value = true;
     error.value = '';
 
@@ -56,7 +56,7 @@ async function fetchUsers(page = 1) {
     }
 }
 
-async function toggle(u) {
+const toggle = async(u) => {
     error.value = '';
     success.value = '';
     const next = !u.is_blocked;
@@ -80,103 +80,101 @@ onMounted(() => fetchUsers(1));
 </script>
 
 <template>
-    <div class="p-4 space-y-4">
-        <h1 class="text-2xl font-semibold">Felhasználók</h1>
+  <section class="container" style="padding: 1rem 0; max-width: 1100px;">
+    <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem;">
+      <h1 style="margin:0;">Felhasználók</h1>
+    </header>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Keresés név vagy e-mail szerint…"
-                class="border rounded px-3 py-1 w-64"
-            />
-            <select v-model.number="filters.perPage" class="border rounded px-2 py-1">
-                <option :value="10">10</option>
-                <option :value="12">12</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-            </select>
-            <select v-model="filters.field" class="border rounded px-2 py-1">
-                <option value="name">Név</option>
-                <option value="email">Email</option>
-                <option value="created_at">Regisztrált</option>
-                <option value="is_blocked">Tiltva?</option>
-            </select>
-            <select v-model="filters.order" class="border rounded px-2 py-1">
-                <option value="asc">Növekvő</option>
-                <option value="desc">Csökkenő</option>
-            </select>
-            <button @click="fetchUsers(1)" class="px-3 py-1 border rounded hover:bg-gray-50">
-                Szűrés
-            </button>
-        </div>
-
-        <div class="overflow-x-auto border rounded">
-            <table class="min-w-full divide-y">
-                <thead class="bg-gray-50">
-                <tr>
-                    <th class="text-left px-3 py-2">ID</th>
-                    <th class="text-left px-3 py-2">Név</th>
-                    <th class="text-left px-3 py-2">Email</th>
-                    <th class="text-left px-3 py-2">Regisztrált</th>
-                    <th class="text-left px-3 py-2">Tiltva?</th>
-                    <th class="px-3 py-2"></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-if="loading">
-                    <td colspan="6" class="px-3 py-6 text-center text-gray-500">Betöltés…</td>
-                </tr>
-                <tr v-else-if="rows.length === 0">
-                    <td colspan="6" class="px-3 py-6 text-center text-gray-500">Nincs találat.</td>
-                </tr>
-                <tr v-for="u in rows" :key="u.id" class="odd:bg-white even:bg-gray-50">
-                    <td class="px-3 py-2">{{ u.id }}</td>
-                    <td class="px-3 py-2">{{ u.name }}</td>
-                    <td class="px-3 py-2">{{ u.email }}</td>
-                    <td class="px-3 py-2">{{ fmt(u.created_at) }}</td>
-                    <td class="px-3 py-2">
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs"
-                            :class="u.is_blocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                        >
-                            {{ u.is_blocked ? 'Igen' : 'Nem' }}
-                        </span>
-                    </td>
-                    <td class="px-3 py-2">
-                        <button
-                            class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-                            :disabled="togglingId === u.id"
-                            @click="toggle(u)"
-                        >
-                            {{ u.is_blocked ? 'Engedélyezés' : 'Tiltás' }}
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div v-if="meta" class="flex items-center gap-2">
-            <button
-                class="px-2 py-1 border rounded disabled:opacity-50"
-                :disabled="!meta?.links?.prev"
-                @click="fetchUsers(meta.current_page - 1)"
-            >
-                ◀
-            </button>
-            <span>Oldal {{ meta.current_page }} / {{ meta.last_page }}</span>
-            <button
-                class="px-2 py-1 border rounded disabled:opacity-50"
-                :disabled="!meta?.links?.next"
-                @click="fetchUsers(meta.current_page + 1)"
-            >
-                ▶
-            </button>
-        </div>
-
-        <p v-if="error" class="text-red-600">{{ error }}</p>
-        <p v-if="success" class="text-green-700">{{ success }}</p>
+    <!-- Szűrő sáv -->
+    <div class="card-eh toolbar-eh" style="padding: .75rem;">
+        <input
+            v-model="filters.search"
+            type="text"
+            placeholder="Keresés név vagy e-mail szerint…"
+            class="input-eh"
+            style="width: 220px;"
+        />
+        <select v-model.number="filters.perPage" class="select-eh" style="width:80px;">
+            <option :value="10">10</option>
+            <option :value="12">12</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+        </select>
+        <select v-model="filters.field" class="select-eh" style="width:130px;">
+            <option value="name">Név</option>
+            <option value="email">Email</option>
+            <option value="created_at">Regisztrált</option>
+            <option value="is_blocked">Tiltva?</option>
+        </select>
+        <select v-model="filters.order" class="select-eh" style="width:110px;">
+            <option value="asc">Növekvő</option>
+            <option value="desc">Csökkenő</option>
+        </select>
+        <button @click="fetchUsers(1)" class="btn-eh is-primary">Szűrés</button>
     </div>
 
+    <!-- Táblázat -->
+    <article class="card-eh" style="padding:0; overflow:auto;">
+        <table class="table-eh">
+            <thead>
+            <tr>
+                <th class="ta-right">ID</th>
+                <th>Név</th>
+                <th>Email</th>
+                <th>Regisztrált</th>
+                <th>Tiltva?</th>
+                <th style="width:1%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-if="loading">
+                <td colspan="6" style="text-align:center; padding: 16px; opacity:.7;">Betöltés…</td>
+            </tr>
+            <tr v-else-if="rows.length === 0">
+                <td colspan="6" style="text-align:center; padding: 16px; opacity:.7;">Nincs találat.</td>
+            </tr>
+            <tr v-for="u in rows" :key="u.id">
+                <td class="ta-right">{{ u.id }}</td>
+                <td>{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ fmt(u.created_at) }}</td>
+                <td>
+                    <span class="badge-eh" :class="u.is_blocked ? 'is-red' : 'is-green'">
+                        {{ u.is_blocked ? 'Igen' : 'Nem' }}
+                    </span>
+                </td>
+                <td>
+                    <button
+                        class="btn-eh"
+                        :aria-busy="togglingId === u.id"
+                        :disabled="togglingId === u.id"
+                        @click="toggle(u)"
+                    >
+                        {{ u.is_blocked ? 'Engedélyezés' : 'Tiltás' }}
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+      </table>
+    </article>
+
+    <!-- Lapozó -->
+    <div v-if="meta" class="pager-eh" style="margin-top: .75rem;">
+        <button
+            class="btn-eh"
+            :disabled="!meta?.links?.prev"
+            @click="fetchUsers(meta.current_page - 1)"
+        >◀</button>
+        <span>Oldal {{ meta.current_page }} / {{ meta.last_page }}</span>
+        <button
+            class="btn-eh"
+            :disabled="!meta?.links?.next"
+            @click="fetchUsers(meta.current_page + 1)"
+        >▶</button>
+    </div>
+
+    <p v-if="error" style="color:#b00020;">{{ error }}</p>
+    <p v-if="success" style="color:#0a7a2f;">{{ success }}</p>
+    
+  </section>
 </template>

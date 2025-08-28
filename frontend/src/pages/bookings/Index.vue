@@ -11,8 +11,8 @@ const perPage = ref(10);
 const page = ref(1);
 const meta = ref(null);
 
-const success = ref(null)
-const actionLoadingId = ref(null)
+const success = ref(null);
+const actionLoadingId = ref(null);
 
 function canCancel(b) {
     if (!b || b.status === 'cancelled') return false;
@@ -58,8 +58,8 @@ function formatDate(iso) {
 }
 
 async function fetchData() {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
     try {
         const res = await BookingsService.listMine({
             status: status.value || '',
@@ -94,98 +94,93 @@ onMounted(fetchData);
 </script>
 
 <template>
-    <div class="max-w-5xl mx-auto p-4">
-        <h1 class="text-2xl font-semibold mb-4">Saját foglalásaim</h1>
+    <main class="container" style="max-width:1100px; padding:1rem 0;">
+        <h1 style="margin:0 0 .75rem;">Saját foglalásaim</h1>
 
-        <div class="mb-4 flex gap-3 items-center">
-            <label class="text-sm">
-                Státusz:
-                <select v-model="status" class="border rounded p-1 ml-1">
-                    <option value="">(mind)</option>
-                    <option value="pending">Függőben</option>
-                    <option value="confirmed">Megerősített</option>
-                    <option value="cancelled">Törölt</option>
-                </select>
-            </label>
+    <!-- Szűrősáv -->
+    <section class="card-eh" style="padding:.75rem; margin-bottom:.75rem;">
+        <div class="toolbar-eh">
+            <span class="label-eh">Státusz</span>
+            <select v-model="status" class="select-eh" style="width:160px;">
+                <option value="">(mind)</option>
+                <option value="pending">Függőben</option>
+                <option value="confirmed">Megerősített</option>
+                <option value="cancelled">Törölt</option>
+            </select>
 
-            <label class="text-sm">
-                Sor/oldal:
-                <select v-model.number="perPage" class="border rounded p-1 ml-1">
-                    <option :value="10">10</option>
-                    <option :value="20">20</option>
-                    <option :value="50">50</option>
-                </select>
-            </label>
+            <span class="label-eh" style="margin-left:.5rem;">Sor/oldal</span>
+            <select v-model.number="perPage" class="select-eh" style="width:120px;">
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+            </select>
+
+            <button class="btn-eh is-primary" @click="fetchData">Frissítés</button>
         </div>
+    </section>
 
-        <div v-if="loading" class="p-4 border rounded bg-white shadow-sm">Betöltés…</div>
-        <div v-if="success" class="mb-3 p-3 rounded border border-green-300 bg-green-50 text-green-700">
-            {{ success }}
-        </div>
-        <div v-if="error" class="mb-3 p-3 rounded border border-red-300 bg-red-50 text-red-700">
-            {{ error }}
-        </div>
+    <!-- Üzenetek -->
+    <div v-if="loading" class="card-eh">Betöltés…</div>
+    <p v-if="success" class="alert-eh is-success">{{ success }}</p>
+    <p v-if="error"   class="alert-eh is-error">{{ error }}</p>
 
-        <div v-else class="border rounded bg-white shadow-sm overflow-x-auto">
-            <table class="min-w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="text-left px-3 py-2">Azonosító</th>
-                    <th class="text-left px-3 py-2">Esemény</th>
-                    <th class="text-left px-3 py-2">Időpont</th>
-                    <th class="text-left px-3 py-2">Helyszín</th>
-                    <th class="text-left px-3 py-2">Db</th>
-                    <th class="text-left px-3 py-2">Státusz</th>
-                    <th class="text-left px-3 py-2">Foglalva</th>
-                    <th class="text-left px-3 py-2">Művelet</th>
-                </tr>
+    <!-- Táblázat -->
+    <section v-else class="card-eh" style="padding:0; overflow:auto;">
+        <table class="table-eh is-compact">
+            <thead>
+            <tr>
+                <th>Azonosító</th>
+                <th>Esemény</th>
+                <th>Időpont</th>
+                <th>Helyszín</th>
+                <th>Db</th>
+                <th>Státusz</th>
+                <th>Foglalva</th>
+                <th style="width:1%"></th>
+            </tr>
             </thead>
             <tbody>
-                <tr v-if="rows.length === 0">
-                    <td colspan="7" class="px-3 py-6 text-center text-gray-500">
-                        Nincs foglalás.
-                    </td>
-                </tr>
-                <tr v-for="b in rows" :key="b.id" class="border-t">
-                    <td class="px-3 py-2">#{{ b.id }}</td>
-                    <td class="px-3 py-2">{{ b.event?.title ?? '—' }}</td>
-                    <td class="px-3 py-2">{{ formatDate(b.event?.starts_at) }}</td>
-                    <td class="px-3 py-2">{{ b.event?.location ?? '—' }}</td>
-                    <td class="px-3 py-2">{{ b.quantity }}</td>
-                    <td class="px-3 py-2">
-                        <span
-                            :class="{
-                            'text-amber-700': b.status === 'pending',
-                            'text-green-700': b.status === 'confirmed',
-                            'text-gray-500 line-through': b.status === 'cancelled',
-                            }"
-                        >
-                            {{ b.status }}
-                        </span>
-                    </td>
-                    <td class="px-3 py-2">{{ formatDate(b.created_at) }}</td>
-                    <td class="px-3 py-2">
-                        <button
-                            class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-                            :disabled="!canCancel(b) || actionLoadingId === b.id"
-                            @click="cancelBooking(b)"
-                            title="Foglalás lemondása"
-                        >
-                            Lemondás
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-            </table>
-        </div>
+            <tr v-if="rows.length === 0">
+                <td colspan="8" style="text-align:center; padding:16px; opacity:.7;">Nincs foglalás.</td>
+            </tr>
 
-        <!-- Lapozó -->
-        <div v-if="meta && meta.last_page > 1" class="mt-4 flex items-center gap-2">
-            <button class="px-3 py-1 border rounded" :disabled="page <= 1" @click="toPage(page - 1)">Előző</button>
-            <span class="text-sm">
-                {{ meta.from }}–{{ meta.to }} / {{ meta.total }} (oldal: {{ meta.current_page }}/{{ meta.last_page }})
-            </span>
-            <button class="px-3 py-1 border rounded" :disabled="page >= meta.last_page" @click="toPage(page + 1)">Következő</button>
-        </div>
+            <tr v-for="b in rows" :key="b.id">
+                <td>#{{ b.id }}</td>
+                <td>{{ b.event?.title ?? '—' }}</td>
+                <td>{{ formatDate(b.event?.starts_at) }}</td>
+                <td>{{ b.event?.location ?? '—' }}</td>
+                <td>{{ b.quantity }}</td>
+                <td>
+                <span class="badge-eh"
+                    :class="{
+                    'is-yellow':   b.status === 'pending',
+                    'is-green':    b.status === 'confirmed',
+                    'is-gray':     b.status === 'cancelled'
+                    }"
+                >{{ b.status }}</span>
+                </td>
+                <td>{{ formatDate(b.created_at) }}</td>
+                <td>
+                <button
+                    class="btn-eh is-danger"
+                    :aria-busy="actionLoadingId === b.id"
+                    :disabled="!canCancel(b) || actionLoadingId === b.id"
+                    @click="cancelBooking(b)"
+                    title="Foglalás lemondása"
+                >
+                    Lemondás
+                </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Lapozó -->
+    <div v-if="meta && meta.last_page > 1" class="pager-eh" style="margin-top:.75rem;">
+        <button class="btn-eh" :disabled="page <= 1" @click="toPage(page - 1)">Előző</button>
+        <span>{{ meta.from }}–{{ meta.to }} / {{ meta.total }} (oldal: {{ meta.current_page }}/{{ meta.last_page }})</span>
+        <button class="btn-eh" :disabled="page >= meta.last_page" @click="toPage(page + 1)">Következő</button>
     </div>
+  </main>
 </template>

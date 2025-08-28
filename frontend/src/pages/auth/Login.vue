@@ -1,43 +1,107 @@
 <script setup>
 import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth.js';
+import { useRouter } from 'vue-router';
+import AuthService from '@/services/AuthService';
 
-const route = useRoute();
+// ADMIN belépés
+//const email = ref('admin@eventhub.local');
+//const password = ref('Admin123!');
+
+// ORGANIZER belépés
+const email = ref('org@eventhub.local');
+const password = ref('Org123!');
+
+// USER belépés
+//const email = ref('user@eventhub.local');
+//const password = ref('User123!');
+
+const loading = ref(false);
 const router = useRouter();
-const auth = useAuthStore();
 
-const email = ref('admin@eventhub.local');
-const password = ref('Admin123!');
+const submit = async () => {
+    
+    if (loading.value) return;
 
-async function submit() {
-    const ok = await auth.login(email.value, password.value);
-    if (ok) {
-        const go = route.query.redirect || '/events';
-        router.replace(go);
+    loading.value = true;
+
+    try {
+        await AuthService.login({
+            email: email.value, 
+            password: password.value 
+        });
+        router.push('/'); // vagy szervező/admin szerint
+    } catch (e) {
+        // opcionális: toast vagy <small class="contrast"> hibaüzi
+    } finally {
+        loading.value = false;
     }
 }
 </script>
 
 <template>
-    <section class="container mx-auto p-4" style="max-width:420px">
-        <h1 class="text-2xl font-semibold mb-4">Bejelentkezés</h1>
+    <main class="container">
+        <!-- fejléc (opcionális) -->
+        <nav style="display:flex; justify-content:space-between; align-items:center; padding-block:0.75rem;">
+            <ul><li><strong>EventHub</strong></li></ul>
+            <ul>
+                <li><a href="/">Események</a></li>
+            </ul>
+        </nav>
 
-        <form @submit.prevent="submit" class="grid gap-3">
+        <section class="auth-wrap">
+            <article class="auth-card">
+            <header>
+                <h1 style="margin:0 0 .25rem;">Bejelentkezés</h1>
+                <p class="secondary">Lépj be az adminisztrációhoz vagy a szervezői felülethez.</p>
+            </header>
+
+            <form @submit.prevent="submit" class="auth-actions">
+                <div>
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        v-model="email"
+                        type="email"
+                        name="email"
+                        placeholder="admin@eventhub.local"
+                        autocomplete="email"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label for="password">Jelszó</label>
+                    <input
+                        id="password"
+                        v-model="password"
+                        type="password"
+                        name="password"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                    />
+                </div>
+
+                <button :aria-busy="loading" :disabled="loading" type="submit">
+                    {{ loading ? 'Beléptetés…' : 'Belépés' }}
+                </button>
+            </form>
+
+
+            <!-- opcionális: kis lábjegyzet -->
+            <footer style="margin-top: .75rem;">
+                <small class="secondary">
+                    Tipp: <kbd>Enter</kbd> megnyomásával is bejelentkezhetsz.
+
+                    - admin: `admin@eventhub.local` / `Admin123!`<br/>
+                - organizer: `org@eventhub.local` / `Org123!`<br/>
+                - user: `user@eventhub.local` / `User123!`
+                </small>
+            </footer>
             <div>
-                <label class="text-sm">Email</label>
-                <input type="email" v-model="email" class="border rounded p-2 w-full" required />
+                
             </div>
-            <div>
-                <label class="text-sm">Jelszó</label>
-                <input type="password" v-model="password" class="border rounded p-2 w-full" required />
-            </div>
-
-            <button type="submit" class="px-4 py-2 border rounded hover:bg-gray-50" :disabled="auth.loading">
-                {{ auth.loading ? 'Beléptetés…' : 'Belépés' }}
-            </button>
-
-            <div v-if="auth.error" class="text-red-600 text-sm">{{ auth.error }}</div>
-        </form>
-  </section>
+      </article>
+    </section>
+  </main>
 </template>

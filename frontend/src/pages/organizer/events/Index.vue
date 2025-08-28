@@ -63,56 +63,118 @@ function openCreate() {
     showCreate.value = true
 };
 
-function openEdit(row) {
-    editModel.value = { ...row }
-    showEdit.value = true
+const openEdit = (row) => {
+    editModel.value = { ...row };
+    showEdit.value = true;
 };
 
-async function submitCreate() {
+/**
+ * Új esemény mentése a szerverre.
+ * Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ */
+const submitCreate = async () => {
     submitting.value = true;
+
     try {
+        // A szerveren létrehozzuk az új eseményt a megadott adatokkal.
+        // Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
         await OrganizerEventsService.create(createModel.value);
+        // Modál bezárása
         showCreate.value = false;
+        // A lista újratöltése
         await fetchRows(filters.page);
     } catch (e) {
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
         alert(e?.response?.data?.message || 'Mentési hiba.');
-    } finally { submitting.value = false; }
+    } finally {
+        // A mentés folyamatának lezárása
+        submitting.value = false;
+    }
 };
 
-async function submitEdit() {
+/**
+ * Módosított esemény mentése a szerverre.
+ * Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ */
+const submitEdit = async() => {
+
     submitting.value = true;
+
     try {
+        // Módosított esemény mentése a szerverre.
+        // Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
         await OrganizerEventsService.update(editModel.value.id, editModel.value);
         showEdit.value = false;
         await fetchRows(filters.page);
     } catch (e) {
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
         alert(e?.response?.data?.message || 'Mentési hiba.');
-    } finally { submitting.value = false; }
+    } finally {
+        // A mentési folyamat végén a submitting állapotot nullázni kell.
+        submitting.value = false;
+    }
 }
 
-async function publish(row) {
+const publish = async (row) => {
     if (!confirm(`Biztosan publikálod? "${row.title}"`)) return;
-    try { await OrganizerEventsService.publish(row.id); await fetchRows(filters.page) }
-    catch (e) { alert(e?.response?.data?.message || 'Publikálási hiba.'); }
+    try {
+        await OrganizerEventsService.publish(row.id); 
+        await fetchRows(filters.page);
+    } catch (e) {
+         alert(e?.response?.data?.message || 'Publikálási hiba.');
+    }
 }
 
-async function cancelEvent(row) {
-    if (!confirm(`Biztosan lemondod? "${row.title}"`)) return;
+/**
+ * Esemény lemondása a szerveren.
+ * Sikeres lemondás esetén a listát újra betöltjük.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ * @param {Object} row - az esemény adatai
+ */
+const cancelEvent = async (row) => {
+    // Lemondási folyamat indítása a szerveren.
+    // Első lépésként a felhasználónak meg kell erősítenie a lemondást.
+    // Ha nem erősíti meg, akkor a folyamat itt megáll.
+    if (!confirm(`Biztosan lemondod? "${row.title}"`)) {
+        return;
+    }
+
     try {
+        // A lemondás a szerveren elindul.
+        // Sikeres lemondás esetén a listát újra betöltjük az aktuális oldalon.
         await OrganizerEventsService.cancel(row.id); 
         await fetchRows(filters.page);
     } catch (e) {
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
         alert(e?.response?.data?.message || 'Lemondási hiba.');
     }
 }
 
-async function remove(row) {
-    if (!confirm(`Biztosan törlöd? "${row.title}"`)) 
+/**
+ * Esemény törlése a szerveren.
+ * Sikeres törlés esetén a listát újra betöltjük az aktuális oldalon, ha van még esemény,
+ * ellenkező esetben az előző oldalra ugrik.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ * @param {Object} row - az esemény adatai
+ */
+const remove = async (row) => {
+    // A törlés megerősítése a felhasználóval
+    // Ha nem erősíti meg a törlést, akkor a függvény nem csinál semmit
+    if (!confirm(`Biztosan törlöd? "${row.title}"`)) {
         return;
+    }
+
     try {
-        await OrganizerEventsService.destroy(row.id); 
+        // Törlés a szerveren
+        await OrganizerEventsService.destroy(row.id);
+
+        // Ha van még esemény a listában, akkor a listát újra betöltjük az aktuális oldalon
+        // Ellenkező esetben az előző oldalra ugrik
         await fetchRows(rows.value.length > 1 ? filters.page : Math.max(1, filters.page - 1)); 
     } catch (e) {
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük
         alert(e?.response?.data?.message || 'Törlési hiba.');
     }
 }
@@ -148,6 +210,7 @@ async function remove(row) {
             </select>
         </div>
 
+        <!-- Üzenetek -->
         <div v-if="error" class="text-red-600">{{ error }}</div>
         <div v-if="loading">Betöltés…</div>
 
@@ -182,10 +245,10 @@ async function remove(row) {
                     >{{ row.status }}</span>
                     </td>
                     <td class="p-2 border-b text-right">
-                    <button class="px-2 py-1 border rounded mr-1" @click="openEdit(row)">Szerk.</button>
-                    <button class="px-2 py-1 border rounded mr-1" @click="publish(row)" :disabled="row.status==='published'">Publikál</button>
-                    <button class="px-2 py-1 border rounded mr-1" @click="cancelEvent(row)" :disabled="row.status==='cancelled'">Lemond</button>
-                    <button class="px-2 py-1 border rounded" @click="remove(row)">Törlés</button>
+                        <button class="px-2 py-1 border rounded mr-1" @click="openEdit(row)">Szerk.</button>
+                        <button class="px-2 py-1 border rounded mr-1" @click="publish(row)" :disabled="row.status==='published'">Publikál</button>
+                        <button class="px-2 py-1 border rounded mr-1" @click="cancelEvent(row)" :disabled="row.status==='cancelled'">Lemond</button>
+                        <button class="px-2 py-1 border rounded" @click="remove(row)">Törlés</button>
                     </td>
                 </tr>
                 <tr v-if="!loading && rows.length === 0">

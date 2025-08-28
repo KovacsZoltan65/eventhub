@@ -17,13 +17,39 @@ const filters = reactive({
     page: 1,
 });
 
+const nfHUF = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 });
+const nfNum = new Intl.NumberFormat('hu-HU');
+
+function formatMoney(v) {
+    if (v == null) return '—';
+    // ha a backend HUF-ot közöl, használhatod a HUF formatot:
+    try {
+        return nfHUF.format(v); 
+    } catch {
+        return nfNum.format(v);
+    }
+}
+
+function resetFilters() {
+  filters.user_id = ''
+  filters.event_id = ''
+  filters.status = ''
+  filters.date_from = ''
+  filters.date_to   = ''
+  filters.field = 'created_at'
+  filters.order = 'desc'
+  filters.perPage = 12
+  fetchRows(1)
+}
+
+
 const rows = ref([]);
 const meta = ref(null);
 const loading = ref(false);
 const error = ref(null);
 
 async function fetchRows(page = 1) {
-    loading.value = true; error.value = null
+    loading.value = true; error.value = null;
     try {
         const res = await AdminBookingsService.list({ ...filters, page });
         rows.value = res.data;
@@ -59,97 +85,123 @@ async function cancelRow(row) {
 </script>
 
 <template>
-    <div class="container mx-auto p-4 space-y-4">
-        <h1 class="text-2xl font-bold">Foglalások (Admin)</h1>
+    <main class="container" style="max-width:1100px; padding:1rem 0;">
+        <h1 style="margin:0 0 .75rem;">Foglalások (Admin)</h1>
 
-        <div class="grid md:grid-cols-6 gap-2">
-            <input v-model="filters.user_id"  type="number" min="1" placeholder="User ID"  class="border p-2 rounded">
-            <input v-model="filters.event_id" type="number" min="1" placeholder="Event ID" class="border p-2 rounded">
-            <select v-model="filters.status" class="border p-2 rounded">
-                <option value="">— összes státusz —</option>
-                <option value="pending">pending</option>
-                <option value="confirmed">confirmed</option>
-                <option value="cancelled">cancelled</option>
-            </select>
-            <input v-model="filters.date_from" type="date" class="border p-2 rounded">
-            <input v-model="filters.date_to"   type="date" class="border p-2 rounded">
-            <div class="flex gap-2">
-                <select v-model="filters.field" class="border p-2 rounded">
+        <!-- Szűrősáv -->
+        <section class="card-eh" style="padding:.75rem; margin-bottom:.75rem;">
+            <div class="toolbar-eh wrap" style="gap:.5rem;">
+                <!-- User Id -->
+                <input v-model="filters.user_id"  type="number" min="1" placeholder="User ID"  class="input-eh" style="width:120px;" />
+                <!-- Event Id -->
+                <input v-model="filters.event_id" type="number" min="1" placeholder="Event ID" class="input-eh" style="width:120px;" />
+
+                <!-- Státusz -->
+                <select v-model="filters.status" class="select-eh" style="width:160px;">
+                    <option value="">— összes státusz —</option>
+                    <option value="pending">pending</option>
+                    <option value="confirmed">confirmed</option>
+                    <option value="cancelled">cancelled</option>
+                </select>
+
+                <!-- Dátumok -->
+                <input v-model="filters.date_from" type="date" class="input-eh" style="width:160px;" />
+                <input v-model="filters.date_to"   type="date" class="input-eh" style="width:160px;" />
+
+                <!-- Szűrés -->
+                <select v-model="filters.field" class="select-eh" style="width:140px;">
                     <option value="created_at">létrehozva</option>
                     <option value="quantity">mennyiség</option>
                     <option value="total_price">összeg</option>
                 </select>
-                <select v-model="filters.order" class="border p-2 rounded">
+
+                <!-- Irány -->
+                <select v-model="filters.order" class="select-eh" style="width:120px;">
                     <option value="desc">desc</option>
                     <option value="asc">asc</option>
                 </select>
+
+                <!-- Sor/oldal -->
+                <select v-model="filters.perPage" class="select-eh" style="width:110px;">
+                    <option :value="12">12</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                </select>
+
+                <!-- Frissítés -->
+                <button class="btn-eh is-primary" @click="fetchRows(1)">Szűrés</button>
+                <button class="btn-eh is-secondary" @click="resetFilters" title="Szűrők törlése">Törlés</button>
+
             </div>
-        </div>
+        </section>
 
-        <div v-if="error" class="text-red-600">{{ error }}</div>
-        <div v-if="loading">Betöltés…</div>
+        <!-- Üzenetek -->
+        <p v-if="error"   class="alert-eh is-error">{{ error }}</p>
+        <div v-if="loading" class="card-eh">Betöltés…</div>
 
-        <div class="overflow-auto border rounded">
-        <table class="min-w-full border-collapse">
-            <thead class="bg-gray-50">
-            <tr>
-                <th class="p-2 border-b text-left">#</th>
-                <th class="p-2 border-b text-left">Esemény</th>
-                <th class="p-2 border-b text-left">User</th>
-                <th class="p-2 border-b text-left">Menny.</th>
-                <th class="p-2 border-b text-left">Összeg</th>
-                <th class="p-2 border-b text-left">Státusz</th>
-                <th class="p-2 border-b text-right">Művelet</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="b in rows" :key="b.id" class="hover:bg-gray-50">
-                <td class="p-2 border-b">{{ b.id }}</td>
-                <td class="p-2 border-b">
-                    <div class="font-medium">{{ b.event?.title || b.event_title }}</div>
-                    <div class="text-xs opacity-70">{{ b.event?.location || b.event_location }}</div>
-                    <div class="text-xs opacity-70">{{ new Date(b.created_at).toLocaleString() }}</div>
-                </td>
-                <td class="p-2 border-b">
-                    <div>{{ b.user?.name || b.user_name }}</div>
-                    <div class="text-xs opacity-70">{{ b.user?.email || b.user_email }}</div>
-                </td>
-                <td class="p-2 border-b">{{ b.quantity }}</td>
-                <td class="p-2 border-b">{{ b.total_price ?? '—' }}</td>
-                <td class="p-2 border-b">
-                    <span class="px-2 py-1 text-xs rounded"
-                        :class="{
-                            'bg-green-100 text-green-700': b.status==='confirmed',
-                            'bg-yellow-100 text-yellow-700': b.status==='pending',
-                            'bg-red-100 text-red-700': b.status==='cancelled',
-                        }">{{ b.status }}</span>
-                </td>
-                <td class="p-2 border-b text-right">
-                    <button class="px-2 py-1 border rounded"
-                            @click="cancelRow(b)"
-                            :disabled="b.status==='cancelled'">
+        <!-- Táblázat -->
+        <section v-else class="card-eh" style="padding:0; overflow:auto;">
+            <table class="table-eh is-compact">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Esemény</th>
+                    <th>User</th>
+                    <th>Menny.</th>
+                    <th>Összeg</th>
+                    <th>Státusz</th>
+                    <th style="text-align:right;">Művelet</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="b in rows" :key="b.id">
+                    <td>#{{ b.id }}</td>
+                    <td>
+                        <div style="font-weight:600">{{ b.event?.title || b.event_title }}</div>
+                        <div style="font-size:.85rem; opacity:.75">{{ b.event?.location || b.event_location }}</div>
+                        <div style="font-size:.85rem; opacity:.75">{{ new Date(b.created_at).toLocaleString('hu-HU') }}</div>
+                    </td>
+                    <td>
+                        <div>{{ b.user?.name || b.user_name }}</div>
+                        <div style="font-size:.85rem; opacity:.75">{{ b.user?.email || b.user_email }}</div>
+                    </td>
+                    <td class="ta-right">{{ b.quantity }}</td>
+                    <td class="ta-right">{{ formatMoney(b.total_price) }}</td>
+                    <td>
+                        <span class="badge-eh"
+                            :class="{
+                            'is-green':    b.status==='confirmed',
+                            'is-yellow':   b.status==='pending',
+                            'is-gray':     b.status==='cancelled'
+                            }"
+                        >{{ b.status }}</span>
+                    </td>
+                    <td style="text-align:right;">
+                    <button
+                        class="btn-eh is-danger"
+                        :disabled="b.status==='cancelled'"
+                        @click="cancelRow(b)"
+                        title="Foglalás lemondása"
+                    >
                         Lemond
                     </button>
-                </td>
-            </tr>
-            <tr v-if="!loading && rows.length===0">
-                <td colspan="7" class="p-3 text-center opacity-70">Nincs találat.</td>
-            </tr>
-            </tbody>
-        </table>
-        </div>
+                    </td>
+                </tr>
 
-        <div v-if="meta" class="flex items-center gap-2">
-            <button class="border px-3 py-1 rounded" :disabled="!meta.prev" @click="fetchRows(filters.page - 1)">Előző</button>
-            <span>{{ meta.current }} / {{ meta.last }}</span>
-            <button class="border px-3 py-1 rounded" :disabled="!meta.next" @click="fetchRows(filters.page + 1)">Következő</button>
-            <span class="ml-auto text-sm opacity-70">Összesen: {{ meta.total }}</span>
-            <select v-model="filters.perPage" class="border p-1 rounded">
-                <option :value="12">12</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-            </select>
+                <tr v-if="!loading && rows.length===0">
+                    <td colspan="7" style="text-align:center; padding:16px; opacity:.7;">Nincs találat.</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Lapozó -->
+        <div v-if="meta" class="pager-eh" style="margin-top:.75rem;">
+        <button class="btn-eh" :disabled="!meta.prev" @click="fetchRows(filters.page - 1)">Előző</button>
+        <span>{{ meta.current }} / {{ meta.last }}</span>
+        <button class="btn-eh" :disabled="!meta.next" @click="fetchRows(filters.page + 1)">Következő</button>
+        <span style="margin-left:auto; font-size:.9rem; opacity:.7;">Összesen: {{ meta.total }}</span>
         </div>
-        
-    </div>
+    </main>
 </template>
+

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import EventsService from '../../services/EventService.js';
 
@@ -9,13 +9,20 @@ const loading = ref(false);
 const error = ref(null);
 const rows = ref([]);
 const meta = reactive({ currentPage: 1, perPage: 12, lastPage: 1, total: 0 });
+
 const filters = reactive({
     page: 1, perPage: 12, status: 'published',
     search: '', location: '', category: '',
     field: 'starts_at', order: 'asc', // <-- rendezés alap
 });
 
-function sortBy(field) {
+/**
+ * Beállítja a rendezési mezőt és a sorrendet.
+ * Ha a mező már be van állítva, akkor a sorrend megváltozik.
+ * @param {string} field
+ */
+const sortBy = (field) => {
+    
     if (filters.field === field) {
         filters.order = filters.order === 'asc' ? 'desc' : 'asc';
     } else {
@@ -24,11 +31,23 @@ function sortBy(field) {
     }
 }
 
-function sortIndicator(field) {
+/**
+ * Visszaadja a rendezési nyilat a megadott mezőhöz.
+ * Ha a mező nem egyezik meg a rendezési mezővel, akkor üres stringet ad vissza.
+ * Ha a rendezési sorrend növekvő, akkor ' ▲' jelenik meg, egyébként ' ▼'.
+ * @param {string} field A rendezési mező neve.
+ * @returns {string} A rendezési nyilat tartalmazó string.
+ */
+const sortIndicator = (field) => {
     return filters.field !== field ? '' : (filters.order === 'asc' ? ' ▲' : ' ▼');
 }
 
-async function fetchEvents() {
+/**
+ * Betölti az eseményeket a szerverről a megadott filterekkel.
+ * A szerverről kapott adatokkal beállítja a `rows` és `meta` változókat.
+ * Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-re.
+ */
+const fetchEvents = async() => {
     loading.value = true;
     error.value = null;
 
@@ -54,14 +73,24 @@ watch(
     { deep: true }
 );
 
-function toPage(p) {
+/**
+ * Beállítja a szervernek küldendő oldalszámot a megadott értékre.
+ * Ha a megadott érték 1-nél kisebb, vagy a meta.lastPage-nél nagyobb, akkor nem csinál semmit.
+ * @param {number} p Az oldalszám, amire át szeretnénk váltani.
+ */
+const toPage = (p) => {
     if (p<1 || p>meta.lastPage) return; 
     filters.page = p;
 }
 
-function fmt(dt) {
+/**
+ * Formáz egy dátumot ember által olvasható formára.
+ * @param {string|number|Date} dt dátum (ISO 8601 string, timestamp, vagy Date-objektum)
+ * @returns {string} Formázott dátum, vagy `'—'` ha a dátum nincs megadva
+ */
+const fmt = (dt) => {
     return dt ? new Date(dt).toLocaleString() : '—';
-    }
+}
 </script>
 
 <template>
@@ -94,11 +123,13 @@ function fmt(dt) {
                 <tbody>
                 <tr v-for="ev in rows" :key="ev.id" class="hover:bg-gray-50">
                     <td class="p-2 border-b whitespace-nowrap">{{ fmt(ev.starts_at) }}</td>
+
                     <td class="p-2 border-b">
-                        <a class="text-blue-700 hover:underline" @click.prevent="router.push(`/events/${ev.id}`)">
+                        <!--<a class="text-blue-700 hover:underline" @click.prevent="router.push(`/events/${ev.id}`)">-->
                             {{ ev.title }}
-                        </a>
+                        <!--</a>-->
                     </td>
+
                     <td class="p-2 border-b">{{ ev.location }}</td>
                     <td class="p-2 border-b">{{ ev.category || '—' }}</td>
                     <td class="p-2 border-b text-right">{{ ev.capacity ?? '—' }}</td>
@@ -107,7 +138,7 @@ function fmt(dt) {
                         <span class="px-2 py-0.5 border rounded text-xs uppercase">{{ ev.status }}</span>
                     </td>
                     <td class="p-2 border-b">
-                        <button @click.prevent="router.push(`/events/${ev.id}`)">részletek</button>
+                        <button class="btn btn-eh" @click.prevent="router.push(`/events/${ev.id}`)">részletek</button>
                     </td>
                 </tr>
                 </tbody>
