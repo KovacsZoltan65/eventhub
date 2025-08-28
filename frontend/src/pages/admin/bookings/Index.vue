@@ -20,26 +20,36 @@ const filters = reactive({
 const nfHUF = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 });
 const nfNum = new Intl.NumberFormat('hu-HU');
 
+
+/**
+ * Formáz egy számot pénznemben. Ha a szám null, akkor '—' jelenik meg.
+ * @param {number|null} v - a szám, amit formázni kell
+ * @returns {string} a formázott szám
+ */
 function formatMoney(v) {
     if (v == null) return '—';
-    // ha a backend HUF-ot közöl, használhatod a HUF formatot:
+
+    // Ha a szerver HUF-ot közöl, akkor a HUF formázást használhatjuk:
     try {
+        // A HUF formázás egy ilyen példát ad vissza: "1 200 000 Ft"
         return nfHUF.format(v); 
     } catch {
+        // Ha a szerver nem HUF-ot közöl, akkor a szám formázását használjuk:
+        // A szám formázás egy ilyen példát ad vissza: "1 200 000"
         return nfNum.format(v);
     }
 }
 
 function resetFilters() {
-  filters.user_id = ''
-  filters.event_id = ''
-  filters.status = ''
-  filters.date_from = ''
-  filters.date_to   = ''
-  filters.field = 'created_at'
-  filters.order = 'desc'
-  filters.perPage = 12
-  fetchRows(1)
+    filters.user_id = ''
+    filters.event_id = ''
+    filters.status = ''
+    filters.date_from = ''
+    filters.date_to   = ''
+    filters.field = 'created_at'
+    filters.order = 'desc'
+    filters.perPage = 12
+    fetchRows(1)
 }
 
 
@@ -129,8 +139,17 @@ async function cancelRow(row) {
                 </select>
 
                 <!-- Frissítés -->
-                <button class="btn-eh is-primary" @click="fetchRows(1)">Szűrés</button>
-                <button class="btn-eh is-secondary" @click="resetFilters" title="Szűrők törlése">Törlés</button>
+                <button
+                    class="btn-eh is-primary" 
+                    @click="fetchRows(1)"
+                >Szűrés</button>
+                
+                <!-- Szürés törlése -->
+                <button 
+                    class="btn-eh is-sprimary" 
+                    @click="resetFilters" 
+                    title="Szűrők törlése"
+                >Törlés</button>
 
             </div>
         </section>
@@ -197,10 +216,10 @@ async function cancelRow(row) {
 
         <!-- Lapozó -->
         <div v-if="meta" class="pager-eh" style="margin-top:.75rem;">
-        <button class="btn-eh" :disabled="!meta.prev" @click="fetchRows(filters.page - 1)">Előző</button>
-        <span>{{ meta.current }} / {{ meta.last }}</span>
-        <button class="btn-eh" :disabled="!meta.next" @click="fetchRows(filters.page + 1)">Következő</button>
-        <span style="margin-left:auto; font-size:.9rem; opacity:.7;">Összesen: {{ meta.total }}</span>
+            <button class="btn-eh" :disabled="!meta.prev" @click="fetchRows(filters.page - 1)">Előző</button>
+            <span>{{ meta.current }} / {{ meta.last }}</span>
+            <button class="btn-eh" :disabled="!meta.next" @click="fetchRows(filters.page + 1)">Következő</button>
+            <span style="margin-left:auto; font-size:.9rem; opacity:.7;">Összesen: {{ meta.total }}</span>
         </div>
     </main>
 </template>

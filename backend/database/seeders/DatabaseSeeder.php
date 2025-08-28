@@ -14,7 +14,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-
+        
+        activity()->disableLogging();
+        
         $this->call([
             RolesAndUsersSeeder::class, // létrehozza: admin|organizer|user + userek
             PermissionsSeeder::class,   // jogosultságok + kiosztás
@@ -22,6 +24,9 @@ class DatabaseSeeder extends Seeder
             EventsTableSeeder::class,   // Események
             BookingsTableSeeder::class,  // Foglalások
         ]);
+        
+        activity()->enableLogging();
+        
         //User::factory()->create([
         //    'name' => 'Test User',
         //    'email' => 'test@example.com',

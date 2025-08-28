@@ -80,11 +80,9 @@
 
 /* Általános EventHub gomb stílus */
 .btn-eh {
-  height: 32px;            /* kompaktabb */
-  padding: 0 .9rem;
-  font-size: 0.9rem;
-  line-height: 1;
-  border-radius: 8px;
+  color: var(--pico-color, #111);        /* legyen mindig látható szöveg */
+  cursor: pointer;
+  text-decoration: none;
 }
 
 /* Foglalási mennyiség mező */
@@ -220,7 +218,23 @@ input.booking-input[type="number"] {
 /* ——— Gomb variánsok (btn-eh alapot már használod) ——— */
 .btn-eh.is-primary { background: var(--eh-primary); color: #fff; border: 1px solid transparent; }
 .btn-eh.is-primary:hover { filter: brightness(1.05); }
-.btn-eh.is-secondary { background: transparent; border: 1px solid var(--eh-border); }
+
+.btn-eh.is-secondary {
+  background: transparent;
+  border-color: var(--eh-border);
+  color: var(--pico-color, #111);        /* itt is explicit */
+  color: #dc3545;
+}
+.btn-eh.is-secondary:hover,
+.btn-eh.is-secondary:focus-visible {
+  background: rgba(0,0,0,.04);           /* finom hover, világos témán */
+}
+/* állapotkezelés */
+.btn-eh:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
 .btn-eh.is-ghost { background: transparent; border: 0; }
 .btn-eh.is-danger { background: var(--eh-danger); color:#fff; border: 1px solid transparent; }
 
@@ -265,10 +279,10 @@ input.booking-input[type="number"] {
 
 /* Toolbar változat, ami törhet több sorba is, ha kell */
 .toolbar-eh.wrap {
-  flex-wrap: wrap;
+    flex-wrap: wrap;
 }
 .toolbar-eh.wrap > * {
-  flex: none;
+    flex: none;
 }
 
 /* jobbra zárt szám oszlopokhoz */
@@ -276,3 +290,35 @@ input.booking-input[type="number"] {
 
 /* fix szélesség utilok (ha nem akarsz inline style-okat a toolbaron) */
 .w-110{ width:110px; } .w-120{ width:120px; } .w-140{ width:140px; } .w-160{ width:160px; } .w-320{ width:320px; }
+
+/* Modal overlay + card */
+.modal-overlay-eh{
+    position: fixed;
+    inset: 0;                 /* top:0; right:0; bottom:0; left:0 */
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0,0,0,.35);
+}
+
+.modal-card-eh{
+    background: var(--eh-surface);
+    border: 1px solid var(--eh-border);
+    border-radius: 12px;
+    width: min(720px, 100%);
+    max-height: min(85dvh, 800px);
+    overflow: auto;
+    padding: 1rem;
+}
+
+/* opcionális kis anim */
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(8px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);  }
+}
+.modal-card-eh { animation: modalIn .15s ease-out; }
+
+/* Scroll lock a dokumentumon, ha modál nyitva */
+.html-no-scroll, .body-no-scroll { overflow: hidden; }

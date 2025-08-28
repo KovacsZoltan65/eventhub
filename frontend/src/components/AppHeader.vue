@@ -27,8 +27,22 @@ async function doLogout() {
                 <!-- ESEMÉNYEK -->
                 <RouterLink to="/events" class="hover:underline">Események</RouterLink>
 
+                <!-- SZERVEZŐ ESEMÉNYEI -->
+                <RouterLink
+                    v-if="hasRole('organizer') || hasRole('admin')"
+                    to="/organizer/events"
+                    class="btn btn-eh"
+                >
+                    Szervező / Eseményeim
+                </RouterLink>
+
                 <!-- FELHASZNÁLÓK (role: admin) -->
-                <RouterLink v-if="hasRole('admin')" to="/admin/users">Admin / Felhasználók</RouterLink>
+                <RouterLink 
+                    v-if="hasRole('admin')" 
+                    to="/admin/users"
+                >
+                    Admin / Felhasználók
+                </RouterLink>
 
                 <!-- FOGLALÁSAIM -->
                 <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim</RouterLink>

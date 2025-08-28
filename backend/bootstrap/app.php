@@ -46,15 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
         
-        /*
-        // Spatie route middleware aliasok
-        $middleware->alias([
-            'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class,
-            'role_or_permission' => RoleOrPermissionMiddleware::class,
-        ]);
-        */
-        
         // Sanctum SPA stateful az API csoporton
         $middleware->appendToGroup('api', EnsureFrontendRequestsAreStateful::class);
         

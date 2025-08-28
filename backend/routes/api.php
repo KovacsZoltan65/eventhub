@@ -43,12 +43,14 @@ Route::middleware(['auth:sanctum','role:organizer|admin', EnsureUserIsNotBlocked
     ->prefix('organizer')->name('organizer.')->controller(OrganizerEventController::class)
     ->group(function() {
         // Események lekérése
-        //Route::get('/events', 'getEvents')->name('events')->middleware('permission:event.view.any');
+        Route::get('/events', 'getEvents')->name('events.index')->middleware('permission:event.view.any|event.view.mine');
         Route::get('/events/{event}', 'show')->name('events.show')->middleware('permission:event.view.any');
         // Új esemény létrehozása
         Route::post('/events', 'store')->name('create')->middleware('permission:event.create');
+        
         // Esemény szerkesztése
         Route::put('/events/{event}', 'update')->name('update')->middleware('permission:event.update.own');
+        
         // Esemény törlése
         Route::delete('/events/{event}', 'destroy')->name('delete')->middleware('permission:event.delete.own');
         // Organizer: publikálás (saját eseményre – policy szűr)

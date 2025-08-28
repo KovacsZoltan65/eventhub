@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class OrganizerEventController extends Controller
 {
+    use AuthorizesRequests,
+        ValidatesRequests;
+    
     public function show(Request $r, Event $event)
     {
         $this->authorize('view', $event);
@@ -59,8 +64,9 @@ class OrganizerEventController extends Controller
         ), Response::HTTP_CREATED);
     }
     
-    public function update(UpdateEventRequest $r, Event $event)
+    public function update(UpdateEventRequest $r, $_event)
     {
+        $event = Event::find($_event);
         // authorize() megtörtént a Request-ben
         $event->update($r->validated());
         

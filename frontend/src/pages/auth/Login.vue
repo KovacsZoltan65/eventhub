@@ -8,8 +8,10 @@ import AuthService from '@/services/AuthService';
 //const password = ref('Admin123!');
 
 // ORGANIZER belépés
-const email = ref('org@eventhub.local');
+const email = ref('org1@eventhub.local');
 const password = ref('Org123!');
+//const email = ref('org2@eventhub.local');
+//const password = ref('Org123!');
 
 // USER belépés
 //const email = ref('user@eventhub.local');
@@ -93,9 +95,10 @@ const submit = async () => {
                 <small class="secondary">
                     Tipp: <kbd>Enter</kbd> megnyomásával is bejelentkezhetsz.
 
-                    - admin: `admin@eventhub.local` / `Admin123!`<br/>
-                - organizer: `org@eventhub.local` / `Org123!`<br/>
-                - user: `user@eventhub.local` / `User123!`
+                    - admin: admin@eventhub.local | Admin123!<br/>
+                    - organizer1: org1@eventhub.local | Org123!<br/>
+                    - organizer2: org2@eventhub.local | Org123!<br/>
+                    - user: user@eventhub.local | User123!
                 </small>
             </footer>
             <div>

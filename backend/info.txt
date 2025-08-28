@@ -12,6 +12,7 @@ route:
 php artisan route:list | findstr companies
 php artisan route:list | findstr settings
 php artisan route:list | findstr timezone
+php artisan route:list | findstr organizer
 
 php artisan optimize:clear
 

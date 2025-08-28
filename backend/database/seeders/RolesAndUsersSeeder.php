@@ -18,22 +18,34 @@ class RolesAndUsersSeeder extends Seeder
             Role::findOrCreate($r);
         }
 
-    $admin = User::firstOrCreate(
-        ['email'=>'admin@eventhub.local'],
-        ['name'=>'Admin', 'password'=>bcrypt('Admin123!')]);
+        $admin = User::firstOrCreate(
+            ['email'=>'admin@eventhub.local'],
+            ['name'=>'Admin', 'password'=>bcrypt('Admin123!')]
+        );
 
-    $org = User::firstOrCreate(
-        ['email'=>'org@eventhub.local'],
-        ['name'=>'Organizer', 'password'=>bcrypt('Org123!')]
-    );
+        $org1 = User::firstOrCreate(
+            ['email'=>'org1@eventhub.local'],
+            ['name'=>'Organizer1', 'password'=>bcrypt('Org123!')]
+        );
+        
+        $org2 = User::firstOrCreate(
+            ['email'=>'org2@eventhub.local'],
+            ['name'=>'Organizer2', 'password'=>bcrypt('Org123!')]
+        );
 
-    $usr = User::firstOrCreate(
-        ['email'=>'user@eventhub.local'],
-        ['name'=>'User', 'password'=>bcrypt('User123!')]
-    );
+        $usr = User::firstOrCreate(
+            ['email'=>'user@eventhub.local'],
+            ['name'=>'User', 'password'=>bcrypt('User123!')]
+        );
 
-    $admin->syncRoles('admin');
-    $org->syncRoles('organizer');
-    $usr->syncRoles('user');
-  }
+        // Adminisztrátor
+        $admin->syncRoles('admin');
+        
+        // Szervezők
+        $org1->syncRoles('organizer');
+        $org2->syncRoles('organizer');
+        
+        // Felhasználó
+        $usr->syncRoles('user');
+    }
 }

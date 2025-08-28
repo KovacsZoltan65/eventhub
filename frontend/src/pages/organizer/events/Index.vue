@@ -1,18 +1,12 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue';
-import OrganizerEventsService from '@/services/OrganizerEventsService.js';
-import EventForm from '@/components/events/EventForm.vue';
-import { useAuthStore } from '@/stores/auth.js';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth.js';
+import OrganizerEventsService from '../../../services/OrganizerEventsService.js';
+import EventForm from '@/components/events/EventForm.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
-
-// egyszerű role guard komponens szinten is (router-ben már meta.roles is lehet)
-if (!auth.user) await auth.fetchMe();
-if (!auth.user?.roles?.includes('organizer') && !auth.user?.roles?.includes('admin')) {
-    router.replace({ name: 'events.index' });
-}
 
 const filters = reactive({
     search: '',
@@ -45,8 +39,35 @@ async function fetchRows(page = 1) {
         error.value = e?.response?.data?.message || 'Betöltési hiba.';
     } finally { loading.value = false; }
 }
-onMounted(() => fetchRows());
-watch(() => [filters.search, filters.status, filters.field, filters.order, filters.perPage], () => fetchRows(1));
+
+onMounted(async () => {
+    // opcionális: ha refresh után nincs betöltve a user, betöltjük
+    if (!auth.user && auth.isAuthenticated) {
+        try {
+            await auth.fetchMe();
+        } catch (e) {}
+    }
+
+    const roles = auth.user?.roles || [];
+    const isOrgOrAdmin = roles.includes('organizer') || roles.includes('admin');
+    if (!isOrgOrAdmin) {
+        router.replace({ name: 'events.index' });
+        return;
+    }
+
+    //ready.value = true;
+    // ha van listatöltésed: await fetchRows(filters.page)
+    await fetchRows(filters.page);   // első lista-betöltés
+});
+
+/**
+ * Figyeli a szürési beállításokat (search, status, field, order, perPage) és
+ * a változások esetén a listát újra betölti az első oldalon.
+ */
+watch(
+    () => [filters.search, filters.status, filters.field, filters.order, filters.perPage], 
+    () => fetchRows(1)
+);
 
 // create / edit modál állapotok
 const showCreate = ref(false);
@@ -55,14 +76,35 @@ const createModel = ref({});
 const editModel = ref({});
 const submitting = ref(false);
 
+/**
+ * A create és edit modálok nyitott állapotát figyeli, és
+ * a dokumentum és a body elemekre egy CSS osztályt ad hozzá,
+ * amely tiltja a scroll-t, amíg a modál nyitva van.
+ */
+watch([showCreate, showEdit], ([c, e]) => {
+    const anyOpen = c || e
+    // dokumentum scroll tiltása, amíg a modál nyitva van
+    document.documentElement.classList.toggle('html-no-scroll', anyOpen)
+    document.body.classList.toggle('body-no-scroll', anyOpen)
+})
+
+/**
+ * Új esemény felvitelének megnyitása.
+ * Beállítja a createModel-t üres értékekkel, és megnyitja a create modalt.
+ */
 function openCreate() {
     createModel.value = {
         title: '', description: '', starts_at: '', location: '',
         capacity: 1, category: '', status: 'draft',
-    }
-    showCreate.value = true
+    };
+    showCreate.value = true;
 };
 
+/**
+ * Esemény szerkesztésének megnyitása.
+ * A szerkesztend  esemény adatait a modellbe másolja, és a szerkeszt  modalt megnyitja.
+ * @param {Object} row - az esemény adatai
+ */
 const openEdit = (row) => {
     editModel.value = { ...row };
     showEdit.value = true;
@@ -117,13 +159,24 @@ const submitEdit = async() => {
     }
 }
 
+/**
+ * Esemény publikálása a szerveren.
+ * Sikeres publikálás esetén a listát újra betöltjük.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ * @param {Object} row - az esemény adatai
+ */
 const publish = async (row) => {
+    // A felhasználónak meg kell erősítenie a publikálást.
     if (!confirm(`Biztosan publikálod? "${row.title}"`)) return;
+
     try {
+        // A publikálás végrehajtása a szerveren.
+        // Sikeres publikálás esetén a listát újra betöltjük.
         await OrganizerEventsService.publish(row.id); 
         await fetchRows(filters.page);
     } catch (e) {
-         alert(e?.response?.data?.message || 'Publikálási hiba.');
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+        alert(e?.response?.data?.message || 'Publikálási hiba.');
     }
 }
 
@@ -181,112 +234,130 @@ const remove = async (row) => {
 </script>
 
 <template>
-    <div class="container mx-auto p-4 space-y-4">
-        <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold">Saját események</h1>
-            <span class="ml-auto">
-                <button class="px-3 py-2 border rounded" @click="openCreate">+ Új esemény</button>
-            </span>
-        </div>
+    <main class="container" style="max-width:1100px; padding:1rem 0;">
+        <header style="display:flex; align-items:center; gap:.75rem;">
+            <h1 style="margin:0;">Saját események</h1>
+            <button class="btn-eh is-primary" style="margin-left:auto;" @click="openCreate">+ Új esemény</button>
+        </header>
 
-        <div class="grid md:grid-cols-5 gap-2">
-            <input v-model="filters.search" placeholder="Keresés cím/ leírás…" class="border p-2 rounded md:col-span-2">
-            <select v-model="filters.status" class="border p-2 rounded">
-                <option value="">— összes státusz —</option>
-                <option value="draft">vázlat</option>
-                <option value="published">közzétéve</option>
-                <option value="cancelled">lemondva</option>
-            </select>
-            <select v-model="filters.field" class="border p-2 rounded">
-                <option value="starts_at">kezdés</option>
-                <option value="title">cím</option>
-                <option value="location">helyszín</option>
-                <option value="category">kategória</option>
-                <option value="status">státusz</option>
-            </select>
-            <select v-model="filters.order" class="border p-2 rounded">
-                <option value="desc">csökkenő</option>
-                <option value="asc">növekvő</option>
-            </select>
-        </div>
+        <!-- Szűrősáv -->
+        <section class="card-eh" style="padding:.75rem; margin-top:.75rem;">
+            <div class="toolbar-eh wrap">
+                <input v-model="filters.search" placeholder="Keresés cím / leírás…" class="input-eh w-320" />
+                <select v-model="filters.status" class="select-eh w-160">
+                    <option value="">— összes státusz —</option>
+                    <option value="draft">vázlat</option>
+                    <option value="published">közzétéve</option>
+                    <option value="cancelled">lemondva</option>
+                </select>
+                <select v-model="filters.field" class="select-eh w-160">
+                    <option value="starts_at">kezdés</option>
+                    <option value="title">cím</option>
+                    <option value="location">helyszín</option>
+                    <option value="category">kategória</option>
+                    <option value="status">státusz</option>
+                </select>
+                <select v-model="filters.order" class="select-eh w-120">
+                    <option value="desc">csökkenő</option>
+                    <option value="asc">növekvő</option>
+                </select>
+                <select v-model="filters.perPage" class="select-eh w-120">
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                </select>
+                <button class="btn-eh is-primary" @click="fetchRows(1)">Frissítés</button>
+            </div>
+        </section>
 
         <!-- Üzenetek -->
-        <div v-if="error" class="text-red-600">{{ error }}</div>
-        <div v-if="loading">Betöltés…</div>
+        <p v-if="error" class="alert-eh is-error">{{ error }}</p>
+        <div v-if="loading" class="card-eh">Betöltés…</div>
 
-        <div class="overflow-auto border rounded">
-            <table class="min-w-full border-collapse">
-                <thead class="bg-gray-50">
+        <!-- Táblázat -->
+        <section v-else class="card-eh" style="padding:0; overflow:auto;">
+            <table class="table-eh is-compact">
+                <thead>
                 <tr>
-                    <th class="text-left p-2 border-b">Cím</th>
-                    <th class="text-left p-2 border-b">Kezdés</th>
-                    <th class="text-left p-2 border-b">Helyszín</th>
-                    <th class="text-left p-2 border-b">Kategória</th>
-                    <th class="text-left p-2 border-b">Kapacitás</th>
-                    <th class="text-left p-2 border-b">Státusz</th>
-                    <th class="text-right p-2 border-b">Műveletek</th>
+                    <th>Cím</th>
+                    <th>Kezdés</th>
+                    <th>Helyszín</th>
+                    <th>Kategória</th>
+                    <th class="ta-right">Kapacitás</th>
+                    <th>Státusz</th>
+                    <th style="text-align:right;">Műveletek</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="row in rows" :key="row.id" class="hover:bg-gray-50">
-                    <td class="p-2 border-b">{{ row.title }}</td>
-                    <td class="p-2 border-b">{{ new Date(row.starts_at).toLocaleString() }}</td>
-                    <td class="p-2 border-b">{{ row.location }}</td>
-                    <td class="p-2 border-b">{{ row.category || '—' }}</td>
-                    <td class="p-2 border-b">{{ row.capacity }}</td>
-                    <td class="p-2 border-b">
-                    <span
-                        class="px-2 py-1 rounded text-xs"
-                        :class="{
-                        'bg-yellow-100 text-yellow-700': row.status==='draft',
-                        'bg-green-100 text-green-700': row.status==='published',
-                        'bg-red-100 text-red-700': row.status==='cancelled',
-                        }"
-                    >{{ row.status }}</span>
+                <tr v-for="row in rows" :key="row.id">
+                    <td>{{ row.title }}</td>
+                    <td>{{ new Date(row.starts_at).toLocaleString('hu-HU') }}</td>
+                    <td>{{ row.location }}</td>
+                    <td>{{ row.category || '—' }}</td>
+                    <td class="ta-right">{{ row.capacity }}</td>
+                    <td>
+                        <span class="badge-eh"
+                            :class="{
+                            'is-yellow':  row.status==='draft',
+                            'is-green':   row.status==='published',
+                            'is-red':     row.status==='cancelled'
+                            }"
+                        >{{ row.status }}</span>
                     </td>
-                    <td class="p-2 border-b text-right">
-                        <button class="px-2 py-1 border rounded mr-1" @click="openEdit(row)">Szerk.</button>
-                        <button class="px-2 py-1 border rounded mr-1" @click="publish(row)" :disabled="row.status==='published'">Publikál</button>
-                        <button class="px-2 py-1 border rounded mr-1" @click="cancelEvent(row)" :disabled="row.status==='cancelled'">Lemond</button>
-                        <button class="px-2 py-1 border rounded" @click="remove(row)">Törlés</button>
+                    <td style="text-align:right;">
+                        <button class="btn-eh is-secondary" @click="openEdit(row)">Szerk.</button>
+                        <button class="btn-eh is-primary" @click="publish(row)" :disabled="row.status==='published'">Publikál</button>
+                        <button class="btn-eh is-danger" @click="cancelEvent(row)" :disabled="row.status==='cancelled'">Lemond</button>
+                        <button class="btn-eh is-danger" @click="remove(row)">Törlés</button>
                     </td>
                 </tr>
+
                 <tr v-if="!loading && rows.length === 0">
-                    <td colspan="7" class="p-3 text-center opacity-70">Nincs találat.</td>
+                    <td colspan="7" style="text-align:center; padding:16px; opacity:.7;">Nincs találat.</td>
                 </tr>
                 </tbody>
             </table>
-        </div>
+        </section>
 
-        <div v-if="meta" class="flex items-center gap-2">
-            <button class="border px-3 py-1 rounded" :disabled="!meta.prev_url" @click="fetchRows(filters.page - 1)">Előző</button>
+        <!-- Lapozó -->
+        <div v-if="meta" class="pager-eh" style="margin-top:.75rem;">
+            <button class="btn-eh" :disabled="!meta.prev_url" @click="fetchRows(filters.page - 1)">Előző</button>
             <span>{{ meta.current }} / {{ meta.last }}</span>
-            <button class="border px-3 py-1 rounded" :disabled="!meta.next_url" @click="fetchRows(filters.page + 1)">Következő</button>
-            <span class="ml-auto text-sm opacity-70">Összesen: {{ meta.total }}</span>
-            <select v-model="filters.perPage" class="border p-1 rounded">
-                <option :value="10">10</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-            </select>
+            <button class="btn-eh" :disabled="!meta.next_url" @click="fetchRows(filters.page + 1)">Következő</button>
+            <span style="margin-left:auto; font-size:.9rem; opacity:.7;">Összesen: {{ meta.total }}</span>
         </div>
 
         <!-- Create modal -->
-        <div v-if="showCreate" class="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-4 w-full max-w-2xl">
-                <h2 class="text-xl font-semibold mb-3">Új esemény</h2>
-                <EventForm v-model="createModel" :loading="submitting" submit-text="Létrehozás"
-                        @submit="submitCreate" @cancel="showCreate=false" />
+        <teleport to="body">
+            <div v-if="showCreate" class="modal-overlay-eh" @click.self="showCreate = false">
+                <div class="modal-card-eh" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+                    <h2 id="createTitle" style="margin:0 0 .5rem; font-size:1.15rem;">Új esemény</h2>
+                    <EventForm
+                        v-model="createModel"
+                        :loading="submitting"
+                        submit-text="Létrehozás"
+                        @submit="submitCreate"
+                        @cancel="showCreate=false"
+                    />
+                </div>
             </div>
-        </div>
+        </teleport>
 
         <!-- Edit modal -->
-        <div v-if="showEdit" class="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-4 w-full max-w-2xl">
-                <h2 class="text-xl font-semibold mb-3">Esemény szerkesztése</h2>
-                <EventForm v-model="editModel" :loading="submitting" submit-text="Mentés"
-                        @submit="submitEdit" @cancel="showEdit=false" />
+        <teleport to="body">
+            <div v-if="showEdit" class="modal-overlay-eh" @click.self="showEdit = false">
+                <div class="modal-card-eh" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+                    <h2 id="editTitle" style="margin:0 0 .5rem; font-size:1.15rem;">Esemény szerkesztése</h2>
+                    <EventForm
+                        v-model="editModel"
+                        :loading="submitting"
+                        submit-text="Mentés"
+                        @submit="submitEdit"
+                        @cancel="showEdit=false"
+                    />
+                </div>
             </div>
-        </div>
-        
-    </div>
+        </teleport>
+    </main>
 </template>
+
