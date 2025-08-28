@@ -64,6 +64,7 @@ class Booking extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
+            ->useLogName(static::$logName)
             ->logFillable();
     }
 

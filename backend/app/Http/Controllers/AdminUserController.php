@@ -26,7 +26,7 @@ class AdminUserController extends Controller
                 if ($v === '') $v = null;
             }
         });
-        
+
         // frontend alias: perPage -> per_page
         if (isset($data['perPage']) && !isset($data['per_page'])) {
             $data['per_page'] = $data['perPage'];
@@ -75,7 +75,7 @@ class AdminUserController extends Controller
 
         return UserResource::collection($paginator);
     }
-    
+
     /**
      * Felhasználó tiltása (is_blocked = true)
      */
@@ -85,46 +85,48 @@ class AdminUserController extends Controller
         if ((int)$request->user()->id === (int)$user->id) {
             return response()->json(['message' => 'Saját fiókot nem lehet tiltani.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        
+
         if ($user->is_blocked) {
             return response()->json(['message' => 'A felhasználó már tiltva van.'], Response::HTTP_CONFLICT);
         }
-        
+
         DB::transaction(function() use ($request, $user) {
-            $user->update(['is_blocked' => true]);
-            
-            activity()
+            $user->is_blocked = true;   // ⬅️ direkt property-állítás
+            $user->save();
+
+            activity('AdminUserController@userBlock')
                 ->causedBy($request->user())
                 ->performedOn($user)
                 ->withProperties(['action' => 'block'])
                 ->event('user.block')
                 ->log('User blocked');
         });
-        
+
         return (new UserResource($user->fresh('roles')))
             ->additional(['message' => 'Felhasználó tiltva']);
     }
-    
+
     /**
      * Felhasználó engedélyezése (is_blocked = false)
      */
-    public function userUnblock(Request $request)
+    public function userUnblock(Request $request, User $user)
     {
         if (!$user->is_blocked) {
             return response()->json(['message' => 'A felhasználó nincs tiltva.'], Response::HTTP_CONFLICT);
         }
-        
+
         DB::transaction(function() use ($request, $user) {
-            $user->update(['is_blocked' => false]);
-            
-            activity()
+            $user->is_blocked = false;   // ⬅️ direkt property-állítás
+            $user->save();
+
+            activity('AdminUserController@userUnblock')
                 ->causedBy($request->user())
                 ->performedOn($user)
                 ->withProperties(['action' => 'unblock'])
                 ->event('user.unblock')
                 ->log('User unblocked');
         });
-        
+
         return (new UserResource($user->fresh('roles')))
             ->additional(['message' => 'Felhasználó engedélyezve.']);
     }

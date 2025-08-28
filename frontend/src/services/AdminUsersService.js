@@ -31,7 +31,9 @@ class AdminUsersService extends BaseService
             await originClient.get('/sanctum/csrf-cookie');
         }
 
-        const { data } = await originClient.patch(`/api${this.url}/${id}/block`, {
+        const url = `/api${this.url}/${id}/${isBlocked ? 'block' : 'unblock'}`;
+
+        const { data } = await originClient.patch(url, {
             is_blocked: !!isBlocked,
         });
 
