@@ -33,7 +33,7 @@ const fmt = (dt) => {
  */
 const goLogin = () => {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
-}
+};
 
 /**
  * Betölti az eseményt a megadott ID-val.
@@ -52,7 +52,7 @@ const load = async () => {
     } finally {
         loading.value = false;
     }
-}
+};
 
 /**
  * Foglalja le az eseményt a megadott mennyiségben.
@@ -94,7 +94,7 @@ const book = async () => {
         loading.value = false;
     }
     
-}
+};
 
 onMounted(load);
 

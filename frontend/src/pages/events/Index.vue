@@ -29,7 +29,7 @@ const sortBy = (field) => {
         filters.field = field;
         filters.order = 'asc';
     }
-}
+};
 
 /**
  * Visszaadja a rendezési nyilat a megadott mezőhöz.
@@ -40,7 +40,7 @@ const sortBy = (field) => {
  */
 const sortIndicator = (field) => {
     return filters.field !== field ? '' : (filters.order === 'asc' ? ' ▲' : ' ▼');
-}
+};
 
 /**
  * Betölti az eseményeket a szerverről a megadott filterekkel.
@@ -63,7 +63,7 @@ const fetchEvents = async() => {
     } finally {
         loading.value = false;
     }
-}
+};
 
 onMounted(fetchEvents);
 
@@ -81,7 +81,7 @@ watch(
 const toPage = (p) => {
     if (p<1 || p>meta.lastPage) return; 
     filters.page = p;
-}
+};
 
 /**
  * Formáz egy dátumot ember által olvasható formára.
@@ -90,7 +90,7 @@ const toPage = (p) => {
  */
 const fmt = (dt) => {
     return dt ? new Date(dt).toLocaleString() : '—';
-}
+};
 </script>
 
 <template>

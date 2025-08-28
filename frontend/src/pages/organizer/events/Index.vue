@@ -22,23 +22,42 @@ const meta = ref(null);
 const loading = ref(false);
 const error = ref(null);
 
-async function fetchRows(page = 1) {
+/**
+ * Betölti az eseményeket a szerverről a megadott filterekkel.
+ * A szerverről kapott adatokkal beállítja a `rows` és `meta` változókat.
+ * Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-re.
+ * @param {number} [page=1] - a betöltendő oldal száma
+ */
+const fetchRows = async(page = 1) => {
     loading.value = true; error.value = null;
     try {
+        // A szerverről kapott adatokkal beállítja a `rows` változót
+        // A `meta` változóban a lapozásra vonatkozó információkat tároljuk
         const res = await OrganizerEventsService.list({ ...filters, page });
         rows.value = res.data;
         meta.value = {
+            // A jelenlegi oldal száma
             current: res.current_page,
+            // Az utolsó oldal száma
             last: res.last_page,
+            // A korábbi oldal URL-je
             prev_url: res.prev_page_url,
+            // A következő oldal URL-je
             next_url: res.next_page_url,
+            // A foglalások száma
             total: res.total,
         };
+
+        // A `filters.page` változónak a jelenlegi oldal számát állítjuk be
         filters.page = meta.value.current;
     } catch (e) {
+        // Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-re
         error.value = e?.response?.data?.message || 'Betöltési hiba.';
-    } finally { loading.value = false; }
-}
+    } finally {
+        // A betöltési folyamat végén a `loading` változót nullázni kell
+        loading.value = false;
+    }
+};
 
 onMounted(async () => {
     // opcionális: ha refresh után nincs betöltve a user, betöltjük
@@ -92,7 +111,7 @@ watch([showCreate, showEdit], ([c, e]) => {
  * Új esemény felvitelének megnyitása.
  * Beállítja a createModel-t üres értékekkel, és megnyitja a create modalt.
  */
-function openCreate() {
+const openCreate = () => {
     createModel.value = {
         title: '', description: '', starts_at: '', location: '',
         capacity: 1, category: '', status: 'draft',

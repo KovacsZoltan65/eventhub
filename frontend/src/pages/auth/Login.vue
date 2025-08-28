@@ -3,13 +3,16 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AuthService from '@/services/AuthService';
 
+const email = ref('');
+const password = ref('');
+
 // ADMIN belépés
 //const email = ref('admin@eventhub.local');
 //const password = ref('Admin123!');
 
 // ORGANIZER belépés
-const email = ref('org1@eventhub.local');
-const password = ref('Org123!');
+//const email = ref('org1@eventhub.local');
+//const password = ref('Org123!');
 //const email = ref('org2@eventhub.local');
 //const password = ref('Org123!');
 
@@ -20,6 +23,11 @@ const password = ref('Org123!');
 const loading = ref(false);
 const router = useRouter();
 
+/**
+ * Bejelentkezési űrlap beküldési kezelője.
+ * Bejelentkezik a felhasználóba, és átirányítja az irányítópultra.
+ * @async
+ */
 const submit = async () => {
     
     if (loading.value) return;
@@ -27,14 +35,17 @@ const submit = async () => {
     loading.value = true;
 
     try {
+        // Bejelentkezés e-mail címmel és jelszóval
         await AuthService.login({
             email: email.value, 
             password: password.value 
         });
+        // Átirányítás az irányítópultra
         router.push('/'); // vagy szervező/admin szerint
     } catch (e) {
-        // opcionális: toast vagy <small class="contrast"> hibaüzi
+        // Opcionális: toast vagy <small class="contrast"> hibaüzenet
     } finally {
+        // A betöltési állapot visszaállítása
         loading.value = false;
     }
 }
@@ -58,6 +69,7 @@ const submit = async () => {
             </header>
 
             <form @submit.prevent="submit" class="auth-actions">
+                <!-- EMAIL -->
                 <div>
                     <label for="email">Email</label>
                     <input
@@ -71,6 +83,7 @@ const submit = async () => {
                     />
                 </div>
 
+                <!-- JELSZÓ -->
                 <div>
                     <label for="password">Jelszó</label>
                     <input
@@ -101,9 +114,6 @@ const submit = async () => {
                     - user: user@eventhub.local | User123!
                 </small>
             </footer>
-            <div>
-                
-            </div>
       </article>
     </section>
   </main>

@@ -40,15 +40,26 @@ function formatMoney(v) {
     }
 }
 
+
+/**
+ * Alaphelyzetbe állítja a szürési beállításokat.
+ * A lapozó beállításokat (page, perPage, field, order) is alaphelyzetbe állítja.
+ * A lista újratöltését is elindítja.
+ */
 function resetFilters() {
+    // Szürési beállítások alaphelyzete
     filters.user_id = ''
     filters.event_id = ''
     filters.status = ''
     filters.date_from = ''
     filters.date_to   = ''
+
+    // Lapozó beállítások alaphelyzete
     filters.field = 'created_at'
     filters.order = 'desc'
     filters.perPage = 12
+
+    // A lista újratöltése az első oldalon
     fetchRows(1)
 }
 
@@ -58,37 +69,71 @@ const meta = ref(null);
 const loading = ref(false);
 const error = ref(null);
 
-async function fetchRows(page = 1) {
+/**
+ * Betölti a foglalásokat a szerverről a megadott filterekkel.
+ * A szerverről kapott adatokkal beállítja a `rows` és `meta` változókat.
+ * Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-re.
+ * A függvény általánosan használható a lapozóhoz is.
+ * @param {number} [page=1] - a betöltendő oldal száma
+ */
+const fetchRows = async (page = 1) => {
     loading.value = true; error.value = null;
     try {
+        // A szerverről kapott adatokkal beállítja a `rows` változót
+        // A `list` függvény a szerverről kapott adatokat adja vissza
         const res = await AdminBookingsService.list({ ...filters, page });
+
+        // A szerverről kapott adatokkal beállítja a `meta` változót
+        // A `meta` változóban a lapozásra vonatkozó információkat tároljuk
         rows.value = res.data;
         meta.value = {
+            // A jelenlegi oldal száma
             current: res.current_page,
+            // Az utolsó oldal száma
             last: res.last_page,
+            // A korábbi oldal URL-je
             prev: res.prev_page_url,
+            // A következő oldal URL-je
             next: res.next_page_url,
+            // A foglalások száma
             total: res.total,
         };
+
+        // A `filters.page` változónak a jelenlegi oldal számát állítjuk be
         filters.page = meta.value.current;
     } catch (e) {
+        // Ha hiba történik, akkor a hibaüzenetet beállítja a `error`-re
         error.value = e?.response?.data?.message || 'Betöltési hiba.';
     } finally {
+        // A betöltési folyamat végén a `loading` változót nullázni kell
         loading.value = false;
     }
 }
 onMounted(() => fetchRows());
+
 watch(
     () => [filters.user_id, filters.event_id, filters.status, filters.date_from, filters.date_to, filters.field, filters.order, filters.perPage],
     () => fetchRows(1)
 );
 
-async function cancelRow(row) {
+/**
+ * Foglalás lemondása a szerveren.
+ * A felhasználónak meg kell erősítenie a lemondást.
+ * Sikeres lemondás esetén a listát újra betöltjük az aktuális oldalon.
+ * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
+ * @param {Object} row - a foglalás adatai
+ */
+const cancelRow = async (row) => {
+    // A lemondás megerősítése a felhasználóval
     if (!confirm(`Biztosan lemondod a foglalást #${row.id}?`)) return;
+
     try {
+        // A lemondás végrehajtása a szerveren
+        // Sikeres lemondás esetén a listát újra betöltjük az aktuális oldalon
         await AdminBookingsService.cancel(row.id); 
         await fetchRows(filters.page);
     } catch (e) {
+        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük
         alert(e?.response?.data?.message || 'Lemondási hiba.');
     }
 }
@@ -101,10 +146,24 @@ async function cancelRow(row) {
         <!-- Szűrősáv -->
         <section class="card-eh" style="padding:.75rem; margin-bottom:.75rem;">
             <div class="toolbar-eh wrap" style="gap:.5rem;">
+                
                 <!-- User Id -->
-                <input v-model="filters.user_id"  type="number" min="1" placeholder="User ID"  class="input-eh" style="width:120px;" />
+                <input 
+                    v-model="filters.user_id"
+                    type="number" min="1" 
+                    placeholder="User ID"
+                    class="input-eh"
+                    style="width:120px;"
+                />
+
                 <!-- Event Id -->
-                <input v-model="filters.event_id" type="number" min="1" placeholder="Event ID" class="input-eh" style="width:120px;" />
+                <input 
+                    v-model="filters.event_id" 
+                    type="number" min="1" 
+                    placeholder="Event ID" 
+                    class="input-eh" 
+                    style="width:120px;"
+                />
 
                 <!-- Státusz -->
                 <select v-model="filters.status" class="select-eh" style="width:160px;">
@@ -115,8 +174,17 @@ async function cancelRow(row) {
                 </select>
 
                 <!-- Dátumok -->
-                <input v-model="filters.date_from" type="date" class="input-eh" style="width:160px;" />
-                <input v-model="filters.date_to"   type="date" class="input-eh" style="width:160px;" />
+                <input 
+                    v-model="filters.date_from" 
+                    type="date" class="input-eh" 
+                    style="width:160px;"
+                />
+
+                <input 
+                    v-model="filters.date_to"
+                    type="date" class="input-eh" 
+                    style="width:160px;"
+                />
 
                 <!-- Szűrés -->
                 <select v-model="filters.field" class="select-eh" style="width:140px;">
@@ -208,7 +276,10 @@ async function cancelRow(row) {
                 </tr>
 
                 <tr v-if="!loading && rows.length===0">
-                    <td colspan="7" style="text-align:center; padding:16px; opacity:.7;">Nincs találat.</td>
+                    <td 
+                        colspan="7" 
+                        style="text-align:center; padding:16px; opacity:.7;"
+                    >Nincs találat.</td>
                 </tr>
                 </tbody>
             </table>
@@ -216,9 +287,20 @@ async function cancelRow(row) {
 
         <!-- Lapozó -->
         <div v-if="meta" class="pager-eh" style="margin-top:.75rem;">
-            <button class="btn-eh" :disabled="!meta.prev" @click="fetchRows(filters.page - 1)">Előző</button>
+            <button 
+                class="btn-eh" 
+                :disabled="!meta.prev" 
+                @click="fetchRows(filters.page - 1)"
+            >Előző</button>
+
             <span>{{ meta.current }} / {{ meta.last }}</span>
-            <button class="btn-eh" :disabled="!meta.next" @click="fetchRows(filters.page + 1)">Következő</button>
+            
+            <button 
+                class="btn-eh" 
+                :disabled="!meta.next" 
+                @click="fetchRows(filters.page + 1)"
+            >Következő</button>
+
             <span style="margin-left:auto; font-size:.9rem; opacity:.7;">Összesen: {{ meta.total }}</span>
         </div>
     </main>

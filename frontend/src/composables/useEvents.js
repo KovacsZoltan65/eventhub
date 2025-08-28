@@ -17,6 +17,11 @@ export function useEvents(initial = {})
         ...initial
     });
 
+    /**
+     * Lekéri az események listáját az aktuális szűrők alapján.
+     * Kezeli a hibákat és a betöltési állapotot.
+     * @returns {Promise<void>}
+     */
     async function fetchEvents() {
         loading.value = true;
         error.value = null;
@@ -36,6 +41,11 @@ export function useEvents(initial = {})
 
     watch(() => ({ ...filters }), fetchEvents, { deep: true });
 
+    /**
+     * Lekéri az aktuális oldalt az események listájában.
+     * A filters.page értékét változtatja.
+     * @param {number} p - Az oldal száma (1-től indul).
+     */
     function goToPage(p) {
         if (p < 1 || p > meta.lastPage) return;
         filters.page = p;

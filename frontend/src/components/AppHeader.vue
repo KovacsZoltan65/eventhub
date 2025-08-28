@@ -3,17 +3,17 @@ import { computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 
-const router = useRouter()
+//const router = useRouter()
 const auth = useAuthStore()
 const hasRole = (r) => auth.user?.roles?.includes(r)
 
 const isAuth = computed(() => auth.isAuthenticated)
 const displayName = computed(() => isAuth.value ? (auth.user?.name ?? 'Ismeretlen') : 'Guard')
 
-async function doLogout() {
-    await auth.logout()
-    router.replace('/login')
-}
+//async function doLogout() {
+//    await auth.logout()
+//    router.replace('/login')
+//}
 </script>
 
 <template>
@@ -45,8 +45,15 @@ async function doLogout() {
                 </RouterLink>
 
                 <!-- FOGLALÁSAIM -->
-                <RouterLink v-if="auth.isAuthenticated" to="/bookings" class="px-3 py-1 border rounded hover:bg-gray-50">Foglalásaim</RouterLink>
-                <RouterLink v-if="hasRole('admin')" to="/admin/bookings">Admin / Foglalások</RouterLink>
+                <RouterLink 
+                    v-if="auth.isAuthenticated" 
+                    to="/bookings" 
+                    class="px-3 py-1 border rounded hover:bg-gray-50"
+                >Foglalásaim</RouterLink>
+                <RouterLink 
+                    v-if="hasRole('admin')" 
+                    to="/admin/bookings"
+                >Admin / Foglalások</RouterLink>
 
                 <span class="ml-auto">
                     <span>Felhasználó: <strong>{{ displayName }}</strong></span>

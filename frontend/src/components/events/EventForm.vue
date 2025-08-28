@@ -69,11 +69,18 @@ const onSubmit = () => {
         <!-- felső rács: 2 oszlopon tördel, kis képernyőn egymás alatt -->
         <div class="form-grid-eh">
 
+            <!-- CÍM -->
             <div class="field-eh">
                 <label class="label-eh" for="ev-title">Cím</label>
-                <input id="ev-title" v-model="form.title" class="input-eh" required :aria-invalid="!form.title?.trim().length" />
+                <input 
+                    id="ev-title" 
+                    v-model="form.title" 
+                    class="input-eh" required 
+                    :aria-invalid="!form.title?.trim().length"
+                />
             </div>
 
+            <!-- HELYSZÍN -->
             <div class="field-eh">
                 <label class="label-eh" for="ev-location">Helyszín</label>
                 <input id="ev-location" v-model="form.location" class="input-eh" required :aria-invalid="!form.location?.trim().length" />
