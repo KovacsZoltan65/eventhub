@@ -1,6 +1,6 @@
-import apiClient from '@/services/HttpClient.js';       // url: http://localhost:8000/api
-import originClient from '@/services/OriginClient.js';   // url: http://localhost:8000 (CSRF-hez)
-
+//import apiClient from './/ApiClient.js';       // url: http://localhost:8000/api
+//import originClient from './OriginClient.js';   // url: http://localhost:8000 (CSRF-hez)
+import {  apiClient, originClient} from './http.js';
 /**
  * Visszaadja a megadott süti értékét, vagy null értéket, ha nincs beállítva ilyen nevű süti.
  * @param {string} name

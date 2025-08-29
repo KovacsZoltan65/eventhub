@@ -7,16 +7,19 @@ export default defineConfig({
     appType: 'spa',
     plugins: [vue()],
     resolve: {
-        alias: { '@': path.resolve(__dirname, './src'), }
+        alias: { '@': path.resolve(__dirname, './src') }
     },
     server: {
+        host: 'localhost',
         port: 5173,
         strictPort: true,
+        // PROXY a Laravel backendhez (http://localhost:8000)
         proxy: {
-            // csak az API és Sanctum menjen a backend felé
-            '^/(api|sanctum)': {
+            // minden /api, /sanctum, /login, /logout hívás továbbmegy a backendre
+            '^/(api|sanctum|login|logout)': {
                 target: 'http://localhost:8000',
                 changeOrigin: true,
+                // secure: false, // ha https-es backend lenne
             },
         },
     },

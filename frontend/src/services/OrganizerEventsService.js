@@ -1,5 +1,4 @@
-import originClient from '../services/OriginClient';
-import apiClient from '../services/HttpClient';
+import { apiClient, originClient } from './http';
 
 let csrfReady = false;
 async function ensureCsrf() {

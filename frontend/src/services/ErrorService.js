@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { apiClient } from './HttpClient.js';
+import { apiClient } from './http';
 
 class ErrorService {
   logClientError(error, additionalData = {}) {

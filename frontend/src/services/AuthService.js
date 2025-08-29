@@ -1,5 +1,4 @@
-import originClient from '@/services/OriginClient.js';
-import apiClient from '@/services/HttpClient.js';
+import { apiClient, originClient } from './http';
 
 class AuthService {
     async csrf() {

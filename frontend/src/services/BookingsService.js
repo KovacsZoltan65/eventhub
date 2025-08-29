@@ -1,5 +1,6 @@
-import originClient from '@/services/OriginClient.js'; // base: http://localhost:8000
-import apiClient from '@/services/HttpClient.js';       // base: http://localhost:8000/api
+//import originClient from './OriginClient.js'; // base: http://localhost:8000
+//import apiClient from './ApiClient.js';       // base: http://localhost:8000/api
+import { apiClient, originClient } from './http';
 
 function getCookie(name) {
   const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));

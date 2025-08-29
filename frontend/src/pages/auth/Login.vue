@@ -3,12 +3,12 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AuthService from '@/services/AuthService';
 
-const email = ref('');
-const password = ref('');
+//const email = ref('');
+//const password = ref('');
 
 // ADMIN belépés
-//const email = ref('admin@eventhub.local');
-//const password = ref('Admin123!');
+const email = ref('admin@eventhub.local');
+const password = ref('Admin123!');
 
 // ORGANIZER belépés
 //const email = ref('org1@eventhub.local');

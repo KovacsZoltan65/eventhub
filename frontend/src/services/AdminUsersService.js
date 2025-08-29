@@ -1,13 +1,11 @@
-import BaseService from './BaseService';
-import { originClient } from './OriginClient';
+import { apiClient, originClient } from './http';
 
 import { getCookie } from '../utils/cookies';
 
-class AdminUsersService extends BaseService
+class AdminUsersService
 {
     constructor()
     {
-        super();
         this.url = '/admin/users';
     }
 
@@ -21,7 +19,7 @@ class AdminUsersService extends BaseService
             order: params.order ?? 'asc',
         };
 
-        const res = await this.get(this.url, { params: query });
+        const res = await apiClient.get(this.url, { params: query });
         return res.data;
     }
 

@@ -1,11 +1,10 @@
-import BaseService from '@/services/BaseService.js';
+import { apiClient, originClient } from './http';
 
-class EventsService extends BaseService
+class EventsService
 {
 
     constructor()
     {
-        super();
         this.url = "/events";
     }
 
@@ -25,13 +24,13 @@ class EventsService extends BaseService
 
         // csak a "valódi" értékeket küldjük (ne menjen '', null, undefined)
         const query = Object.fromEntries(Object.entries(raw).filter(([_, v]) => v !== undefined && v !== null && v !== ""));
-        const res = await this.get(this.url, { params: query });
+        const res = await apiClient.get(this.url, { params: query });
         return res.data;
     }
 
     async show(id)
     {
-        const res = await this.get(`${this.url}/${id}`);
+        const res = await apiClient.get(`${this.url}/${id}`);
         return res.data?.data ?? res.data; // támogatjuk mindkét szerkezetet
     }
 }
