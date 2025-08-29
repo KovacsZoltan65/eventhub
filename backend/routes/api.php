@@ -49,7 +49,7 @@ Route::middleware(['auth:sanctum','role:organizer|admin', EnsureUserIsNotBlocked
         Route::post('/events', 'store')->name('create')->middleware('permission:event.create');
         
         // Esemény szerkesztése
-        Route::put('/events/{event}', 'update')->name('update')->middleware('permission:event.update.own');
+        Route::put('/events/{id}', 'update')->name('update')->middleware('permission:event.update.own');
         
         // Esemény törlése
         Route::delete('/events/{event}', 'destroy')->name('delete')->middleware('permission:event.delete.own');

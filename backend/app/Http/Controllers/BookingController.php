@@ -18,6 +18,19 @@ use function Symfony\Component\Clock\now;
 
 class BookingController extends Controller
 {
+    /**
+     * Foglalások lekérése saját foglalásaimhoz.
+     * A foglalásokat a kapott paraméterek szerint sz r jük.
+     * A `status` csak a saját foglalásaimhoz szolgál.
+     * A `per_page` és `page` paraméterek határozzák meg a lapozást.
+     * Az `order` és `field` paraméterek határozzák meg a rendezést.
+     * A rendezési mez  a `created_at` vagy `starts_at` lehet.
+     * A `starts_at` rendezéshez a kapcsolatot használjuk, mivel az `events` táblában van.
+     * A `created_at` rendezéshez a `bookings` táblában van.
+     * A lekérdezés eredménye egy BookingResource kollekció lesz.
+     * @param Request $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function indexMine(Request $request)
     {
         $validated = $request->validate([
@@ -27,20 +40,20 @@ class BookingController extends Controller
             'order'    => 'sometimes|in:asc,desc',
             'field'    => 'sometimes|in:created_at,starts_at',
         ]);
-        
+
         $user = $request->user();
-        
+
         $q = Booking::query()
             ->where('user_id', $user->id)
             ->with(['event:id,title,starts_at,location']);
-        
+
         if( !empty($validated['status']) ) {
             $q->where('status', $validated['status']);
         }
-        
+
         $field = $validated['field'] ?? 'created_at';
         $order = $validated['order'] ?? 'asc';
-        
+
         // ha starts_at-ra rendezünk, join nélkül megtehetjük a kapcsolaton keresztül is:
         if ($field === 'starts_at') {
             $q->join('events', 'events.id', '=', 'bookings.event_id')
@@ -49,59 +62,72 @@ class BookingController extends Controller
         } else {
             $q->orderBy($field, $order);
         }
-        
+
         $perPage = (int) ($validated['per_page'] ?? 10);
-        
+
         return BookingResource::collection(
             $q->paginate($perPage)
         );
     }
-    
-    // Foglalás rögzítése
+
+    /**
+     * Jegyfoglalás közzétett eseményre.
+     * A foglalás azonnal visszaigazolásra kerül, ami azt jelenti, hogy a szervező számára látható lesz.
+     * Az eseménynek szabad kapacitással kell rendelkeznie, és a felhasználó nem léphette túl a limitet (max_per_user_per_event).
+     * A foglalás a kérés hitelesítési tokenje által azonosított felhasználóhoz lesz hozzárendelve.
+     * A kérésnek tartalmaznia kell az "event_id" és a "quantity" mezőket.
+     * A válasz tartalmazza a létrehozott foglalás azonosítóját, a lefoglalt mennyiséget, a teljes árat, egy időbélyeget, valamint a lefoglalt esemény azonosítóját, címét, kezdési időpontját és helyszínét.
+     * @param StoreBookingRequest $kérés
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     * @throws \Throwable
+     * @see \App\Http\Requests\StoreBookingRequest
+     * @see \App\Models\Booking
+     * @see \App\Models\Event
+     */
     public function store(StoreBookingRequest $request)
     {
-        $userId = auth()->id();
-
         $eventId = $request->event_id;
-        
+
         $event = Event::find($eventId);
-        
+
         // csak published esemény foglalható
         if ($event->status !== 'published') {
             return response()->json(['message' => 'Event is not bookable.'], 422);
         }
-        
+
         $user = $request->user();
         $reqQty = (int)$request->integer('quantity');
         $maxPerUser = (int) config('booking.max_per_user_per_event', 5);
-        
+
         $result = DB::transaction(function() use($user, $eventId, $reqQty, $maxPerUser) {
             // Sorzár a versenyhelyzet ellen
             $eventRow = DB::table('events')
                 ->where('id', $eventId)
                 ->lockForUpdate()
                 ->first();
-            
+
             // Eddig megerősített mennyiség ettől a usertől erre az eseményre
-            $already = (int) Booking::where('user_id', $user->id)
+            $already = (int) Booking::query()->where('user_id', $user->id)
                 ->where('event_id', $eventId)
                 ->where('status', 'confirmed')
                 ->sum('quantity');
-            
+
             if ($already + $reqQty > $maxPerUser) {
                 abort(Response::HTTP_UNPROCESSABLE_ENTITY, "Limit exceeded (max {$maxPerUser} tickets per user for this event).");
             }
-            
+
             // Maradék ülőhely a confirmed foglalások alapján
-            $confirmedSum = (int) Booking::where('event_id', $eventId)
+            $confirmedSum = (int) Booking::query()->where('event_id', $eventId)
                 ->where('status', 'confirmed')
                 ->sum('quantity');
-            
+
             $remaining = (int)$eventRow->capacity - $confirmedSum;
             if ($remaining < $reqQty) {
                 abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Not enough seats left.');
             }
-            
+
             $booking = Booking::create([
                 'user_id'    => $user->id,
                 'event_id'   => $eventId,
@@ -109,7 +135,7 @@ class BookingController extends Controller
                 'status'     => 'confirmed', // jelenleg azonnal megerősítjük
                 'unit_price' => 0,
             ]);
-            
+
             activity()
                 ->causedBy($user)
                 ->performedOn($booking)
@@ -119,20 +145,15 @@ class BookingController extends Controller
                 ])
                 ->event('booking.create')
                 ->log('Booking created');
-            
+
             $booking->load(['event:id,title,starts_at,location']);
-            
+
             $result = [
                 'bookingId'  => $booking->id,
                 'quantity'   => (int) $booking->quantity,
                 'totalPrice' => (int) $booking->quantity * (int) $booking->unit_price,
-                
+
                 'timestamp' => $booking->created_at,
-                /*
-                'timestamp' => $booking->created_at instanceof \DateTimeInterface
-                                ? $booking->created_at->format(\DateTimeInterface::ATOM) // ISO-8601
-                                : now()->toAtomString(),
-                */
                 'event'      => [
                     'id'        => $booking->event->id,
                     'title'     => $booking->event->title,
@@ -140,50 +161,59 @@ class BookingController extends Controller
                     'location'  => $booking->event->location,
                 ],
             ];
-            
+
             return response()->json($result, Response::HTTP_CREATED);
         });
-        
+
         return $result;
     }
-    
-    // Foglalás lemondása
+
+    /**
+     * Foglalás törlése.
+     *
+     * A felhasználó csak az általa létrehozott foglalást törölheti.
+     * Foglalás csak akkor törölhető, ha az esemény a jövőben van.
+     * Foglalás csak akkor törölhető, ha még nem lett törölve.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Booking $booking
+     */
     public function cancel(Request $r, Booking $booking)
     {
         $user = $r->user();
-        
+
         // Csak a saját foglalását mondhatja le
         if ($booking->user_id !== $user->id) {
-            return response()->json(['message' => 'Forbidden.'], Http::HTTP_FORBIDDEN);
+            return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
         }
-        
+
         // Betöltjük az eseményt a további ellenőrzésekhez és válaszhoz
         $booking->load(['event:id,title,starts_at,location']);
-        
+
         // Már törölt?
         if ($booking->status === 'cancelled') {
-            return response()->json(['message' => 'Booking already cancelled.'], Http::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(['message' => 'Booking already cancelled.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        
+
         // Csak jövőbeli eseményt lehessen lemondani
         $startsAt = $booking->event?->starts_at instanceof \Illuminate\Support\Carbon
             ? $booking->event->starts_at
             : Carbon::parse($booking->event?->starts_at);
-        
-        if ($startsAt && $startsAt->isPast()) {
-            return response()->json(['message' => 'Event is in the past; cannot cancel.'], Http::HTTP_UNPROCESSABLE_ENTITY);
+
+        if ($startsAt->isPast()) {
+            return response()->json(['message' => 'Event is in the past; cannot cancel.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        
+
         // Állapot frissítése
         $booking->update(['status' => 'cancelled']);
-        
+
         activity()
             ->causedBy($user)
             ->performedOn($booking)
             ->withProperties(['event_id' => $booking->event_id, 'prev_status' => 'confirmed'])
             ->event('booking.cancel')
             ->log('Booking cancelled');
-        
+
         // Friss objektum vissza (event mezőkkel)
         return response()->json((new BookingResource($booking))->resolve(), Response::HTTP_OK);
     }

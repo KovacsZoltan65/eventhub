@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\EventResource;
+use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class AdminEventController extends Controller
 {
@@ -53,40 +56,60 @@ class AdminEventController extends Controller
             $q->paginate((int)($v['per_page'] ?? 20))
         );
     }
-    
+
     /**
-     * Esemény részletei adminnak
+     * Esemény részletei adminisztrátorként
+     *
+     * @param Event $event
+     * @return EventResource
      */
-    public function show(Event $event)
+    public function show(Event $event): EventResource
     {
+        // Az esemény részleteiért felelős metódus.
+        // Visszatér egy EventResource objektumot, amely tartalmazza
+        // az esemény adatait, és a kapcsolódó szervező adatait is.
         $event->load('organizer:id,name')
               ->loadSum(['bookings as confirmed_quantity' => fn($q)=>$q->where('status','confirmed')],'quantity');
 
         return new EventResource($event);
     }
-    
-    public function cancel(\Illuminate\Http\Request $r, \App\Models\Event $event)
+
+    /**
+     * Esemény lemondása adminisztrátorként
+     *
+     * A lemondás nem lehetséges, ha az esemény már lemondva van.
+     * A lemondás nem lehetséges, ha az esemény már elkezdődött.
+     *
+     * @param Request $r
+     * @param Event $event
+     */
+    public function cancel(Request $r, Event $event)
     {
+        // Ellenőrizzük, hogy az esemény nem lett-e már lemondva
         if ($event->status === 'cancelled') {
             return response()->json(['message' => 'Event already cancelled'], 409);
         }
-        
+
+        // Ellenőrizzük, hogy az esemény nem kezdődött-e már el
         if ($event->starts_at && now()->greaterThanOrEqualTo($event->starts_at)) {
             return response()->json(['message' => 'Event already started'], 422);
         }
-        
+
+        // Frissítsük az eseményt
         $event->update(['status' => 'cancelled']);
-        
+
+        // Naplózzuk a lemondást
         activity()
             ->causedBy($r->user())
             ->performedOn($event)
             ->event('admin.event.cancel')
             ->withProperties(['event_id' => $event->id])
             ->log('Event cancelled by admin');
-        
+
+        // Visszaküldjük a lemondott eseményt
         $event->load('organizer:id,name')
           ->loadSum(['bookings as confirmed_quantity' => fn($q)=>$q->where('status','confirmed')],'quantity');
 
-        return new \App\Http\Resources\EventResource($event);
+        return new EventResource($event);
     }
 }

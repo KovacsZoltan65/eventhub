@@ -34,6 +34,18 @@ const fetchRows = async(page = 1) => {
         // A szerverről kapott adatokkal beállítja a `rows` változót
         // A `meta` változóban a lapozásra vonatkozó információkat tároljuk
         const res = await OrganizerEventsService.list({ ...filters, page });
+
+        /*
+        const res = await OrganizerEventsService.list({
+            search: filters.search,
+            status: filters.status,
+            field: filters.field,
+            order: filters.order,
+            perPage: filters.perPage,
+            page
+        });
+        */
+
         rows.value = res.data;
         meta.value = {
             // A jelenlegi oldal száma
@@ -79,14 +91,14 @@ onMounted(async () => {
     await fetchRows(filters.page);   // első lista-betöltés
 });
 
-/**
- * Figyeli a szürési beállításokat (search, status, field, order, perPage) és
- * a változások esetén a listát újra betölti az első oldalon.
- */
-watch(
-    () => [filters.search, filters.status, filters.field, filters.order, filters.perPage], 
-    () => fetchRows(1)
-);
+const onEditModelChange = (payload) => {
+  // merge: a meglévő editModel + a form által küldött mezők
+  editModel.value = { ...editModel.value, ...payload };
+};
+
+const onCreateModelChange = (payload) => {
+  createModel.value = { ...createModel.value, ...payload };
+};
 
 // create / edit modál állapotok
 const showCreate = ref(false);
@@ -96,16 +108,33 @@ const editModel = ref({});
 const submitting = ref(false);
 
 /**
- * A create és edit modálok nyitott állapotát figyeli, és
- * a dokumentum és a body elemekre egy CSS osztályt ad hozzá,
- * amely tiltja a scroll-t, amíg a modál nyitva van.
+ * Figyeli a szürési beállításokat (search, status, field, order, perPage) és
+ * a változások esetén a listát újra betölti az első oldalon.
  */
-watch([showCreate, showEdit], ([c, e]) => {
-    const anyOpen = c || e
-    // dokumentum scroll tiltása, amíg a modál nyitva van
-    document.documentElement.classList.toggle('html-no-scroll', anyOpen)
-    document.body.classList.toggle('body-no-scroll', anyOpen)
-})
+watch(
+    () => [filters.search, filters.status, filters.field, filters.order, filters.perPage], 
+    () => fetchRows(1)
+);
+
+/**
+ * Figyeli a szerkeszt  modal állapotát, és ha az bezárul, a szerkesztett
+ * esemény adatait törli.
+ */
+watch(showEdit, (v) => { 
+    if (!v) {
+        editModel.value = {};
+    }
+});
+
+/**
+ * Figyeli az új esemény modal állapotát, és ha az bezárul, az új esemény
+ * adatait törli.
+ */
+watch(showCreate, (v) => { 
+    if (!v) {
+        createModel.value = {};
+    }
+});
 
 /**
  * Új esemény felvitelének megnyitása.
@@ -125,7 +154,7 @@ const openCreate = () => {
  * @param {Object} row - az esemény adatai
  */
 const openEdit = (row) => {
-    editModel.value = { ...row };
+    editModel.value = JSON.parse(JSON.stringify(row)); // deep clone
     showEdit.value = true;
 };
 
@@ -159,24 +188,22 @@ const submitCreate = async () => {
  * Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
  * Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
  */
-const submitEdit = async() => {
-
+const submitEdit = async () => {
+    if (!editModel.value?.id) {
+        alert('Hiányzik az esemény azonosítója (id).');
+        return;
+    }
     submitting.value = true;
-
     try {
-        // Módosított esemény mentése a szerverre.
-        // Sikeres mentés esetén a modál bezárul, és a listát újra betöltjük.
         await OrganizerEventsService.update(editModel.value.id, editModel.value);
         showEdit.value = false;
         await fetchRows(filters.page);
     } catch (e) {
-        // Hiba esetén a hibaüzenetet a felhasználó számára megjelenítjük.
         alert(e?.response?.data?.message || 'Mentési hiba.');
     } finally {
-        // A mentési folyamat végén a submitting állapotot nullázni kell.
         submitting.value = false;
     }
-}
+};
 
 /**
  * Esemény publikálása a szerveren.
@@ -250,6 +277,11 @@ const remove = async (row) => {
         alert(e?.response?.data?.message || 'Törlési hiba.');
     }
 }
+
+const isCancelled = (s) => s === 'cancelled' || s === 'canceled';
+const canPublish  = (row) => row.status === 'draft';          // csak draft-ból
+const canCancel   = (row) => !isCancelled(row.status);         // már cancelled-et ne
+
 </script>
 
 <template>
@@ -324,10 +356,31 @@ const remove = async (row) => {
                         >{{ row.status }}</span>
                     </td>
                     <td style="text-align:right;">
-                        <button class="btn-eh is-secondary" @click="openEdit(row)">Szerk.</button>
-                        <button class="btn-eh is-primary" @click="publish(row)" :disabled="row.status==='published'">Publikál</button>
-                        <button class="btn-eh is-danger" @click="cancelEvent(row)" :disabled="row.status==='cancelled'">Lemond</button>
-                        <button class="btn-eh is-danger" @click="remove(row)">Törlés</button>
+                        <!-- SZERKESZTÉS -->
+                        <button 
+                            class="btn-eh is-secondary" 
+                            @click="openEdit(row)"
+                        >Szerk.</button>
+
+                        <!-- PUBLIKÁLÁS -->
+                        <button 
+                            class="btn-eh is-primary" 
+                            @click="publish(row)" 
+                            :disabled="!canPublish(row)"
+                        >Publikál</button>
+
+                        <!-- LEMONDÁS -->
+                        <button 
+                            class="btn-eh is-danger" 
+                            @click="cancelEvent(row)" 
+                            :disabled="!canCancel(row)"
+                        >Lemond</button>
+
+                        <!-- TÖRLÉS -->
+                        <button 
+                            class="btn-eh is-danger" 
+                            @click="remove(row)"
+                        >Törlés</button>
                     </td>
                 </tr>
 
@@ -352,9 +405,11 @@ const remove = async (row) => {
                 <div class="modal-card-eh" role="dialog" aria-modal="true" aria-labelledby="createTitle">
                     <h2 id="createTitle" style="margin:0 0 .5rem; font-size:1.15rem;">Új esemény</h2>
                     <EventForm
-                        v-model="createModel"
+                        :model-value="createModel"
+                        :key="showCreate ? 'create' : 'create-hidden'"
                         :loading="submitting"
                         submit-text="Létrehozás"
+                        @update:modelValue="onCreateModelChange"
                         @submit="submitCreate"
                         @cancel="showCreate=false"
                     />
@@ -368,9 +423,11 @@ const remove = async (row) => {
                 <div class="modal-card-eh" role="dialog" aria-modal="true" aria-labelledby="editTitle">
                     <h2 id="editTitle" style="margin:0 0 .5rem; font-size:1.15rem;">Esemény szerkesztése</h2>
                     <EventForm
-                        v-model="editModel"
+                        :model-value="editModel"
+                        :key="showEdit ? (editModel?.id ?? 'edit') : 'edit-hidden'"
                         :loading="submitting"
                         submit-text="Mentés"
+                        @update:modelValue="onEditModelChange"
                         @submit="submitEdit"
                         @cancel="showEdit=false"
                     />

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
@@ -60,29 +61,44 @@ class AdminBookingController extends Controller
             $q->paginate((int)($validated['per_page'] ?? 20))
         );
     }
-    
+
+    /**
+     * Foglalás lemondása adminisztrátorként
+     *
+     * A foglalás nem lehet már lemondva.
+     * Az esemény nem kezdődhetett el.
+     *
+     * @param Request $r
+     * @param Booking $booking
+     */
     public function cancel(Request $r, Booking $booking)
     {
+        // Ellenőrizze, hogy a foglalás már lemondásra került-e
         if ($booking->status === 'cancelled') {
             return response()->json(['message' => 'Booking already cancelled'], Response::HTTP_CONFLICT);
         }
-        
+
+        // Esemény betöltése
         $booking->load('event:id,starts_at,title,location');
-        
-        if ($booking->event && $booking->event->starts_at && now()->greaterThanOrEqualTo($booking->event->starts_at)) {
+
+        // Ellenőrizd, hogy az esemény már elkezdődött-e
+        if ($booking->event?->starts_at && now()->greaterThanOrEqualTo($booking->event?->starts_at)) {
             return response()->json(['message' => 'Event already started'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        
+
+        // Foglalás lemondása
         DB::transaction(function () use ($r, $booking) {
             $booking->update(['status' => 'cancelled']);
-            
+
+            // Naplózza a műveletet
             activity()
                 ->causedBy($r->user())
                 ->performedOn($booking)
                 ->withProperties(['event_id' => $booking->event_id, 'quantity' => $booking->quantity])
                 ->event('admin.booking.cancel')
                 ->log('Booking cancelled by admin');
-            
+
+            // Visszaküldjük a lemondott foglalást
             return new BookingResource($booking->refresh()->load('user:id,name,email','event:id,title,starts_at,location'));
         });
     }

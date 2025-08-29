@@ -1,4 +1,3 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 
@@ -21,15 +20,15 @@ const routes = [
 
     // Saját foglalások
     { path: '/bookings', name: 'bookings.mine', component: () => import('@/pages/bookings/Index.vue'), meta: { requiresAuth: true } },
-]
+];
 
 export const router = createRouter({
     history: createWebHistory(),
     routes,
-})
+});
 
 router.beforeEach(async (to) => {
-    const auth = useAuthStore()
+    const auth = useAuthStore();
 
     // Csendes session visszaállítás első betöltéskor
     if (!auth.user && to.path !== '/login') {
@@ -38,15 +37,15 @@ router.beforeEach(async (to) => {
 
     // 1) Auth guard
     if (to.meta?.requiresAuth && !auth.isAuthenticated) {
-        return { path: '/login', query: { redirect: to.fullPath } }
+        return { path: '/login', query: { redirect: to.fullPath } };
     }
 
     // 2) Role guard (TÖMBÖK összevetése!)
     if (to.meta?.roles?.length && auth.isAuthenticated) {
-        const userRoles = auth.user?.roles || []
-        const ok = to.meta.roles.some(r => userRoles.includes(r))
+        const userRoles = auth.user?.roles || [];
+        const ok = to.meta.roles.some(r => userRoles.includes(r));
         if (!ok) return { path: '/' } // vagy egy 403-as oldal
     }
 
-    return true
+    return true;
 })
