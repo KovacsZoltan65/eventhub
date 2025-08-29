@@ -28,7 +28,9 @@ class AuthController extends Controller
         $user = $request->user();
 
         // Szerezd meg a tokent
-        $token = $user->createToken('api-token')->plainTextToken;
+        //$token = $user->createToken('api-token')->plainTextToken;
+        // Session regenerálás
+        $request->session()->regenerate();
 
         // Szerepkörök és engedélyek betöltése
         $user->load('roles:id,name','permissions:id,name');
@@ -44,7 +46,6 @@ class AuthController extends Controller
             'roles'       => $user->roles->pluck('name'),
             'permissions' => $allPerms,
             'is_blocked'  => (bool) (auth()->user()->is_blocked ?? false),
-            'token'       => $token,
         ];
 
         // A válasz visszaküldése

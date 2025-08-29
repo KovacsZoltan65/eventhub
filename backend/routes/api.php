@@ -36,7 +36,8 @@ Route::middleware('auth:sanctum')->get('/me', [AuthController::class, 'me']);
 // --- Publikus események (user auth nem kötelező) ---
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [EventController::class, 'event'])->name('events.event');
-Route::post('/bookings', [BookingController::class, 'store'])->name('events.booking');
+//Route::post('/bookings', [BookingController::class, 'store'])->name('events.booking');
+Route::post('/bookings', [BookingController::class, 'store'])->name('events.booking')->middleware('auth:sanctum');
 
 // --- Organizer zóna ---
 Route::middleware(['auth:sanctum','role:organizer|admin', EnsureUserIsNotBlocked::class])
