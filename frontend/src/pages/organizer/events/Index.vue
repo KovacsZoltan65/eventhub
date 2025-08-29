@@ -278,9 +278,27 @@ const remove = async (row) => {
     }
 }
 
+/**
+ * Megmondja, hogy a paraméterben megadott esemény státuszban le van-e mondva az esemény.
+ * A státuszok: 'draft', 'published', 'cancelled' (vagy 'canceled' - az angol változat)
+ * @param {string} s - az esemény státusza
+ * @returns {boolean} - true, ha le van mondva, false egyébként
+ */
 const isCancelled = (s) => s === 'cancelled' || s === 'canceled';
-const canPublish  = (row) => row.status === 'draft';          // csak draft-ból
-const canCancel   = (row) => !isCancelled(row.status);         // már cancelled-et ne
+/**
+ * Megmondja, hogy a paraméterben megadott esemény státuszban publikálható-e az esemény.
+ * Csak akkor publikálható, ha a státusz 'draft'.
+ * @param {Object} row - az esemény adatai
+ * @returns {boolean} - true, ha publikálható, false egyébként
+ */
+const canPublish = (row) => row.status === 'draft';
+/**
+ * Megmondja, hogy a paraméterben megadott esemény lemondható-e.
+ * Az esemény akkor lemondható, ha a státusz nem 'cancelled'.
+ * @param {Object} row - az esemény adatai
+ * @returns {boolean} - true, ha lemondható, false egyébként
+ */
+const canCancel = (row) => !isCancelled(row.status);
 
 </script>
 
@@ -357,30 +375,16 @@ const canCancel   = (row) => !isCancelled(row.status);         // már cancelled
                     </td>
                     <td style="text-align:right;">
                         <!-- SZERKESZTÉS -->
-                        <button 
-                            class="btn-eh is-secondary" 
-                            @click="openEdit(row)"
-                        >Szerk.</button>
+                        <button class="btn-eh is-secondary" @click="openEdit(row)">Szerk.</button>
 
                         <!-- PUBLIKÁLÁS -->
-                        <button 
-                            class="btn-eh is-primary" 
-                            @click="publish(row)" 
-                            :disabled="!canPublish(row)"
-                        >Publikál</button>
+                        <button class="btn-eh is-primary" @click="publish(row)" :disabled="!canPublish(row)">Publikál</button>
 
                         <!-- LEMONDÁS -->
-                        <button 
-                            class="btn-eh is-danger" 
-                            @click="cancelEvent(row)" 
-                            :disabled="!canCancel(row)"
-                        >Lemond</button>
+                        <button class="btn-eh is-danger" @click="cancelEvent(row)" :disabled="!canCancel(row)">Lemond</button>
 
                         <!-- TÖRLÉS -->
-                        <button 
-                            class="btn-eh is-danger" 
-                            @click="remove(row)"
-                        >Törlés</button>
+                        <button class="btn-eh is-danger" @click="remove(row)" >Törlés</button>
                     </td>
                 </tr>
 
