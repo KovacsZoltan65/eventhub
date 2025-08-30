@@ -19,9 +19,11 @@ return new class extends Migration
             $t->enum('status',['pending','confirmed','cancelled'])->default('confirmed')->index();
             $t->unsignedInteger('unit_price')->default(0); // ha később lesz ár
             $t->timestamps();
-            
+
             $t->index(['event_id','status']);
             $t->index(['user_id','event_id']);
+            $t->index(['user_id']);
+            $t->index(['event_id']);
         });
     }
 

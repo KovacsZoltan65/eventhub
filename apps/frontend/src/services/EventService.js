@@ -1,4 +1,4 @@
-import { apiClient, originClient } from './http';
+import { apiClient } from './http';
 
 class EventsService
 {

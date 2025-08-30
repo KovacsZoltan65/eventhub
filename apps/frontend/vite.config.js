@@ -13,6 +13,13 @@ export default defineConfig({
         host: 'localhost',
         port: 5173,
         strictPort: true,
+        proxy: {
+            '/api':     { target: 'http://backend:8000', changeOrigin: true },
+            '/login':   { target: 'http://backend:8000', changeOrigin: true },
+            '/logout':  { target: 'http://backend:8000', changeOrigin: true },
+            '/sanctum': { target: 'http://backend:8000', changeOrigin: true },
+        },
+        /*
         // PROXY a Laravel backendhez (http://localhost:8000)
         proxy: {
             // minden /api, /sanctum, /login, /logout hívás továbbmegy a backendre
@@ -22,5 +29,6 @@ export default defineConfig({
                 // secure: false, // ha https-es backend lenne
             },
         },
+        */
     },
 });
